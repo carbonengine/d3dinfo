@@ -54,6 +54,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         "RENDER_MAIN_PASS",
         "DO_DISTORTIONS",
         "END_RENDERING",
+        "RENDER_DEBUG",
         "UPDATE_TOOLS", 
         "RENDER_PROXY", 
         "RENDER_INFO",
