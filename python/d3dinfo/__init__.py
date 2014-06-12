@@ -276,12 +276,12 @@ def PopulateShaderLibraryFromFiles():
                 filesToLoad.add(filepath)
     uthread2.map(_AddToShaderLibrary, filesToLoad)
 
+SHADERLIBRARYFILENAME = "res:/Graphics/Shaders/ShaderDescriptions.red"
 
 @telemetry.ZONE_FUNCTION
 def PopulateShaderLibrary():
-    shaderLibraryFilename = "res:/Graphics/Shaders/ShaderDescriptions.red"
-    if blue.paths.exists(shaderLibraryFilename):
-        shaders = blue.resMan.LoadObject(shaderLibraryFilename)
+    if blue.paths.exists(SHADERLIBRARYFILENAME):
+        shaders = blue.resMan.LoadObject(SHADERLIBRARYFILENAME)
         shaderManager.shaderLibrary = shaders.shaderLibrary
     else:
         PopulateShaderLibraryFromFiles()
