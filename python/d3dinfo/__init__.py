@@ -15,6 +15,7 @@ import sys
 import pytelemetry.zoning as telemetry
 import walk
 import uthread2
+import os
 
 try:
     import blue
@@ -250,9 +251,7 @@ def CreatePythonBinding(cs, src, srcAttr, dst, dstAttr):
     return binding
 
 
-@telemetry.ZONE_FUNCTION
-def PopulateShaderLibrary():
-
+def PopulateShaderLibraryFromFiles():
     def _AddToShaderLibrary(filepath):
         highLevelShader = blue.resMan.LoadObject(filepath)
         if highLevelShader is not None:
@@ -266,14 +265,26 @@ def PopulateShaderLibrary():
             logger.error("Unable to find shader library object: %s",
                          filepath)
 
-    filesToLoad = []
-    for path, dirs, files in walk.walk( "res:/Graphics/Shaders/ShaderDescriptions"):
+    # When running locally and you happen to have black files around we may
+    # end up with double entries if we're not careful.
+    filesToLoad = set()
+    for path, dirs, files in walk.walk("res:/Graphics/Shaders/ShaderDescriptions"):
         for f in files:
-            if f.endswith('.red') or f.endswith('.black'):
-                filepath = path + '/' + f
-                filesToLoad.append(filepath)
-
+            filename, extension = os.path.splitext(f)
+            if extension in [".red", ".black"]:
+                filepath = path + '/' + filename + ".red"
+                filesToLoad.add(filepath)
     uthread2.map(_AddToShaderLibrary, filesToLoad)
+
+
+@telemetry.ZONE_FUNCTION
+def PopulateShaderLibrary():
+    shaderLibraryFilename = "res:/Graphics/Shaders/ShaderDescriptions.red"
+    if blue.paths.exists(shaderLibraryFilename):
+        shaders = blue.resMan.LoadObject(shaderLibraryFilename)
+        shaderManager.shaderLibrary = shaders.shaderLibrary
+    else:
+        PopulateShaderLibraryFromFiles()
 
 def _init():
     _StoreGPUInfoInBreakpadHeaders()
