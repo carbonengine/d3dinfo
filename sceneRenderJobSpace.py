@@ -39,6 +39,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         "PRESENT_SWAPCHAIN",
         "SET_SWAPCHAIN_RT",
         "SET_SWAPCHAIN_DEPTH",
+        "UPDATE_PHYSICS",
         "UPDATE_SCENE",
         "SET_CUSTOM_RT",
         "SET_DEPTH",

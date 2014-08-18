@@ -74,6 +74,8 @@ def GetAvailablePlatforms():
         if not blue.pyos.packaged:
             platforms.append("gles2")
 
+        platforms.append("stub")
+
     return platforms
 
 
