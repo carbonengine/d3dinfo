@@ -149,6 +149,11 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.SetSettingsBasedOnPerformancePreferences()
 
 
+    def SuspendRendering(self):
+        SceneRenderJobBase.UnscheduleRecurring(self)
+        self.scheduled = False
+
+
     def Start(self):
         SceneRenderJobBase.Start(self)
         if self.updateJob is not None and not self.updateJob.scheduled:
