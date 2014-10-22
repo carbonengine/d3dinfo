@@ -251,28 +251,6 @@ def CreatePythonBinding(cs, src, srcAttr, dst, dstAttr):
     return binding
 
 
-def GatherFilesToPrefetch(folderToLoadFrom, filesToPrefetch):
-    for path, dirs, files in walk.walk(folderToLoadFrom):
-        for f in files:
-            filename = path + "/" + f
-            if not blue.paths.FileExistsLocally(filename):
-                filesToPrefetch.add(filename)
-
-def PrefetchSingleFile(filename):
-    basename, extension = os.path.splitext(filename)
-    if extension == ".red":
-        filename = basename + ".black"
-    blue.paths.GetFileContentsWithYield(filename)
-
-def PrefetchFiles(filesToPrefetch):
-    uthread2.map(PrefetchSingleFile, filesToPrefetch)
-
-def PrefetchFolder(folderToLoadFrom):
-    filesToPrefetch = set()
-    GatherFilesToPrefetch(folderToLoadFrom, filesToPrefetch)
-
-    PrefetchFiles(filesToPrefetch)
-
 def PopulateShaderLibraryFromFiles():
     def _AddToShaderLibrary(filepath):
         highLevelShader = blue.resMan.LoadObject(filepath)
