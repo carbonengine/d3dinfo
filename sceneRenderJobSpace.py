@@ -63,6 +63,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         "RENDER_TOOLS",   
         "SET_FINAL_RT",
         "RESTORE_DEPTH",
+        "SET_PERFRAME_DATA",
         "RJ_POSTPROCESSING",
         "FINAL_BLIT",
         "SET_VAR_GATHER",
@@ -392,6 +393,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.SetStepAttr("BEGIN_RENDER", 'scene', scene)
         self.SetStepAttr("END_RENDERING", 'scene', scene)
         self.SetStepAttr("RENDER_MAIN_PASS", 'scene', scene)
+        self.SetStepAttr("SET_PERFRAME_DATA", 'scene', scene)
         self._CreateDepthPass()
         self._SetBackgroundScene(scene)
 
@@ -411,6 +413,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.AddStep("BEGIN_RENDER", trinity.TriStepRenderPass(self.GetScene(), trinity.TRIPASS_BEGIN_RENDER))
         self.AddStep("END_RENDERING", trinity.TriStepRenderPass(self.GetScene(), trinity.TRIPASS_END_RENDER))
         self.AddStep("RENDER_MAIN_PASS", trinity.TriStepRenderPass(self.GetScene(), trinity.TRIPASS_MAIN_RENDER))
+        self.AddStep("SET_PERFRAME_DATA", trinity.TriStepRenderPass(self.GetScene(), trinity.TRIPASS_SET_PERFRAME_DATA))
         self._CreateDepthPass()
         self._CreateBackgroundStep()
         
