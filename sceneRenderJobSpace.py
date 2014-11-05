@@ -755,9 +755,14 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.shadowMap = None
 
         if self.postProcessingQuality == 1:
-            self.postProcessingJob.AddPostProcess("Bloom", 'res:/fisfx/postprocess/BloomExp.red')
+            self.postProcessingJob.AddPostProcess(evePostProcess.POST_PROCESS_BLOOM_LOW)
+            self.postProcessingJob.RemovePostProcess(evePostProcess.POST_PROCESS_BLOOM_HIGH)
         elif self.postProcessingQuality == 2:
-            self.postProcessingJob.AddPostProcess("Bloom", 'res:/fisfx/postprocess/BloomVivid.red')
+            self.postProcessingJob.AddPostProcess(evePostProcess.POST_PROCESS_BLOOM_HIGH)
+            self.postProcessingJob.RemovePostProcess(evePostProcess.POST_PROCESS_BLOOM_LOW)
+        else:
+            self.postProcessingJob.RemovePostProcess(evePostProcess.POST_PROCESS_BLOOM_HIGH)
+            self.postProcessingJob.RemovePostProcess(evePostProcess.POST_PROCESS_BLOOM_LOW)
 
 
     def SetSettingsBasedOnPerformancePreferences(self):

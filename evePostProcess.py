@@ -7,6 +7,20 @@ import decometaclass
 from .renderJobUtils import renderTargetManager as rtm
 from . import _trinity as trinity
 
+POST_PROCESS_ASTEROID_FOG = "ASTEROID_FOG"
+POST_PROCESS_BLOOM_HIGH = "BLOOM_HIGH"
+POST_PROCESS_BLOOM_LOW = "BLOOM_LOW"
+POST_PROCESS_DESATURATE = "DESATURATE"
+POST_PROCESS_INCURSION_OVERLAY = "INCURSION_OVERLAY"
+
+POST_PROCESS_PATHS = {
+    POST_PROCESS_ASTEROID_FOG: "res:/fisfx/postprocess/AsteroidFog.red",
+    POST_PROCESS_INCURSION_OVERLAY: "res:/dx9/scene/postprocess/sanshaInfest.red",
+    POST_PROCESS_DESATURATE: "res:/fisfx/postprocess/desaturate.red",
+    POST_PROCESS_BLOOM_LOW: "res:/fisfx/postprocess/BloomExp.red",
+    POST_PROCESS_BLOOM_HIGH: "res:/fisfx/postprocess/BloomVivid.red",
+}
+
 
 class EvePostProcess(object):
     """
@@ -114,8 +128,15 @@ class EvePostProcessingJob(object):
     """
     This class is used to manage and post processing.
     """
-    __cid__       = "trinity.TriRenderJob"
+    __cid__ = "trinity.TriRenderJob"
     __metaclass__ = decometaclass.BlueWrappedMetaclass
+    _postProcessOrder = [
+        POST_PROCESS_ASTEROID_FOG,
+        POST_PROCESS_BLOOM_HIGH,
+        POST_PROCESS_BLOOM_LOW,
+        POST_PROCESS_INCURSION_OVERLAY,
+        POST_PROCESS_DESATURATE
+    ]
 
     def __init__(self, *args):
         self.resolveTarget = None
@@ -125,18 +146,20 @@ class EvePostProcessingJob(object):
         self.key = None
         # If we want specific post processes to run first we add them to the postProcessOrder list
         # and add a None entry for them into the postProcesses list.
-        self.postProcessOrder = ["Bloom",]
-        self.postProcesses = [None,]
+        self.postProcesses = []
+        for _ in self._postProcessOrder:
+            self.postProcesses.append(None)
 
     def _FindPostProcess(self, id):
         index = -1
+        postProcess = None
         for postProcess in self.postProcesses:
             if getattr(postProcess, "name", None) == id:
                 index = self.postProcesses.index(postProcess)
                 break
 
-        if index < 0 and id in self.postProcessOrder:
-            index = self.postProcessOrder.index(id)
+        if index < 0 and id in self._postProcessOrder:
+            index = self._postProcessOrder.index(id)
             postProcess = self.postProcesses[index]
         if index < 0:
             postProcess = None
@@ -180,7 +203,7 @@ class EvePostProcessingJob(object):
         """
         return self._FindPostProcess(id)[0]
 
-    def AddPostProcess(self, id, path, key=None):
+    def AddPostProcess(self, id, path=None, key=None):
         '''
         Adds a post process which is loaded from path and updates post processing steps
         (id) -> unique identifier for the post process
@@ -189,8 +212,13 @@ class EvePostProcessingJob(object):
         '''
         postProcess, i = self._FindPostProcess(id)
 
-        if id in self.postProcessOrder:
-            i = self.postProcessOrder.index(id)
+        if path is None:
+            if id not in POST_PROCESS_PATHS:
+                return
+            path = POST_PROCESS_PATHS[id]
+
+        if id in self._postProcessOrder:
+            i = self._postProcessOrder.index(id)
             postProcess = self.postProcesses[i]
             if postProcess is None:
                 self.liveCount += 1
@@ -227,7 +255,7 @@ class EvePostProcessingJob(object):
 
         self.postProcesses[index].RemoveSteps(self)
         self.postProcesses[index].Release()
-        if id in self.postProcessOrder:
+        if id in self._postProcessOrder:
             self.postProcesses[index] = None
         else:
             self.postProcesses.remove(each)
