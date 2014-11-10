@@ -453,7 +453,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.postProcessingJob.Release()
         self.distortionJob.Release()
         self.backgroundDistortionJob.Release()
-        self.sceneDesaturation.Release()
+        self.sceneDesaturation.Disable()
         self.distortionJob.SetPostProcessVariable("Distortion", "TexDistortion", None)
         self.backgroundDistortionJob.SetPostProcessVariable("Distortion", "TexDistortion", None)
 
@@ -760,12 +760,15 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         if self.postProcessingQuality == 1:
             self.postProcessingJob.AddPostProcess(evePostProcess.POST_PROCESS_BLOOM_LOW)
             self.postProcessingJob.RemovePostProcess(evePostProcess.POST_PROCESS_BLOOM_HIGH)
+            self.sceneDesaturation.Enable()
         elif self.postProcessingQuality == 2:
             self.postProcessingJob.AddPostProcess(evePostProcess.POST_PROCESS_BLOOM_HIGH)
             self.postProcessingJob.RemovePostProcess(evePostProcess.POST_PROCESS_BLOOM_LOW)
+            self.sceneDesaturation.Enable()
         else:
             self.postProcessingJob.RemovePostProcess(evePostProcess.POST_PROCESS_BLOOM_HIGH)
             self.postProcessingJob.RemovePostProcess(evePostProcess.POST_PROCESS_BLOOM_LOW)
+            self.sceneDesaturation.Disable()
 
 
     def SetSettingsBasedOnPerformancePreferences(self):
@@ -868,8 +871,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._RefreshPostProcessingJob(self.distortionJob, self.distortionEffectsEnabled and self.prepared)
         self._RefreshPostProcessingJob(self.backgroundDistortionJob, self.distortionEffectsEnabled and self.prepared)
 
-        self.sceneDesaturation = SceneDesaturation(self.postProcessingJob)
-
         if distortionTexture is not None:
             self.AddStep("DO_DISTORTIONS", trinity.TriStepRunJob(self.distortionJob))
             distortionTriTextureRes = trinity.TriTextureRes()
@@ -905,17 +906,12 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
 
 class SceneDesaturation(object):
-    id = "sceneDesaturation"
-    resPath = "res:/fisfx/postprocess/desaturate.red"
     attrName = "SaturationFactor"
 
 
     def __init__(self, ppJob):
         self.ppJob = ppJob
         self._value = 1.0
-        self.postProcess = self.ppJob.GetPostProcess(self.id)
-        if not self.postProcess:
-            self.postProcess = self.ppJob.AddPostProcess(self.id, self.resPath)
 
     @property
     def value(self):
@@ -924,7 +920,10 @@ class SceneDesaturation(object):
     @value.setter
     def value(self, value):
         self._value = value
-        self.ppJob.SetPostProcessVariable(self.id, self.attrName, value)
+        self.ppJob.SetPostProcessVariable(evePostProcess.POST_PROCESS_DESATURATE, self.attrName, value)
 
-    def Release(self):
-        self.ppJob.RemovePostProcess(self.id)
+    def Disable(self):
+        self.ppJob.RemovePostProcess(evePostProcess.POST_PROCESS_DESATURATE)
+
+    def Enable(self):
+        self.ppJob.AddPostProcess(evePostProcess.POST_PROCESS_DESATURATE)
