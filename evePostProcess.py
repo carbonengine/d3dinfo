@@ -236,6 +236,7 @@ class EvePostProcessingJob(object):
             postProcess.Prepare(self.source)
         
         self.CreateSteps()
+        return postProcess
 
     def RemovePostProcess(self, id):
         '''
@@ -384,3 +385,4 @@ class EvePostProcessingJob(object):
                 each.RemoveSteps(self)
                 
         del self.steps[:]
+
