@@ -3,6 +3,7 @@
 Contains classes that take care of running post processing in space.
 """
 import decometaclass
+import evegraphics.settings as gfxsettings
 
 from .renderJobUtils import renderTargetManager as rtm
 from . import _trinity as trinity
@@ -12,6 +13,7 @@ POST_PROCESS_BLOOM_HIGH = "BLOOM_HIGH"
 POST_PROCESS_BLOOM_LOW = "BLOOM_LOW"
 POST_PROCESS_DESATURATE = "DESATURATE"
 POST_PROCESS_INCURSION_OVERLAY = "INCURSION_OVERLAY"
+POST_PROCESS_THERA_OVERLAY = "THERA_OVERLAY"
 
 POST_PROCESS_PATHS = {
     POST_PROCESS_ASTEROID_FOG: "res:/fisfx/postprocess/AsteroidFog.red",
@@ -19,6 +21,7 @@ POST_PROCESS_PATHS = {
     POST_PROCESS_DESATURATE: "res:/fisfx/postprocess/desaturate.red",
     POST_PROCESS_BLOOM_LOW: "res:/fisfx/postprocess/BloomExp.red",
     POST_PROCESS_BLOOM_HIGH: "res:/fisfx/postprocess/BloomVivid.red",
+    POST_PROCESS_THERA_OVERLAY: "res:/dx9/scene/postprocess/TheraLUT.red",
 }
 
 
@@ -347,6 +350,10 @@ class EvePostProcessingJob(object):
         postProcesses = []
         for each in self.postProcesses:
             ppKey = getattr(each, "key", None)
+            if each is not None and each.name == POST_PROCESS_ASTEROID_FOG:
+                if gfxsettings.Get(gfxsettings.GFX_SHADER_QUALITY) != gfxsettings.SHADER_MODEL_HIGH:
+                    # we only want this effect on high shader model
+                    continue
             if each is not None and (ppKey is None or ppKey == self.key):
                 postProcesses.append(each)
 
