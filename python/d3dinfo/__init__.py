@@ -287,6 +287,28 @@ def PopulateShaderLibrary():
     else:
         PopulateShaderLibraryFromFiles()
 
+
+def IsMsaaTypeSupported(msaa_type, formats):
+    supported = True
+    for surface_format in formats:
+        args = device.adapter, surface_format[0], app.windowed, msaa_type
+        try:
+            if surface_format[1]:
+                quality_levels = adapters.GetRenderTargetMsaaSupport(*args)
+            else:
+                quality_levels = adapters.GetDepthStencilMsaaSupport(*args)
+        except _trinity.ALInvalidCallError:
+            quality_levels = 0
+        supported = supported and quality_levels
+    return supported
+
+def GetHighestSupportedMsaaType(formats):
+    levels = 8, 6, 4, 2
+    for each in levels:
+        if IsMsaaTypeSupported(each, formats):
+            return each
+    return 1
+
 def _init():
     _StoreGPUInfoInBreakpadHeaders()
     device.SetRenderJobs(renderJobs)

@@ -46,6 +46,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         "SET_VAR_DEPTH",
         "SET_VAR_DEPTH_MSAA",
         "SET_VIEWPORT",
+        "CAMERA_UPDATE",
         "SET_PROJECTION",
         "SET_VIEW",
         "CLEAR",
