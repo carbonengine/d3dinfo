@@ -8,15 +8,29 @@ import evegraphics.settings as gfxsettings
 from .renderJobUtils import renderTargetManager as rtm
 from . import _trinity as trinity
 
+PP_GROUP_FOG = "PP_GROUP_FOG"
+PP_GROUP_BLOOM = "PP_GROUP_BLOOM"
+PP_GROUP_LUT = "PP_GROUP_BLOOM"
+
 POST_PROCESS_ASTEROID_FOG = "ASTEROID_FOG"
+POST_PROCESS_ICE_FOG = "ICE_FOG"
 POST_PROCESS_BLOOM_HIGH = "BLOOM_HIGH"
 POST_PROCESS_BLOOM_LOW = "BLOOM_LOW"
 POST_PROCESS_DESATURATE = "DESATURATE"
 POST_PROCESS_INCURSION_OVERLAY = "INCURSION_OVERLAY"
 POST_PROCESS_THERA_OVERLAY = "THERA_OVERLAY"
 
+POST_PROCESS_GROUPS = {
+    POST_PROCESS_ASTEROID_FOG: PP_GROUP_FOG,
+    POST_PROCESS_ICE_FOG: PP_GROUP_FOG,
+    POST_PROCESS_BLOOM_HIGH: PP_GROUP_BLOOM,
+    POST_PROCESS_BLOOM_LOW: PP_GROUP_BLOOM,
+    POST_PROCESS_INCURSION_OVERLAY: PP_GROUP_LUT,
+    POST_PROCESS_THERA_OVERLAY: PP_GROUP_LUT,
+}
 POST_PROCESS_PATHS = {
     POST_PROCESS_ASTEROID_FOG: "res:/fisfx/postprocess/AsteroidFog.red",
+    POST_PROCESS_ICE_FOG: "res:/fisfx/postprocess/IcefieldFog.red",
     POST_PROCESS_INCURSION_OVERLAY: "res:/dx9/scene/postprocess/sanshaInfest.red",
     POST_PROCESS_DESATURATE: "res:/fisfx/postprocess/desaturate.red",
     POST_PROCESS_BLOOM_LOW: "res:/fisfx/postprocess/BloomExp.red",
@@ -134,10 +148,9 @@ class EvePostProcessingJob(object):
     __cid__ = "trinity.TriRenderJob"
     __metaclass__ = decometaclass.BlueWrappedMetaclass
     _postProcessOrder = [
-        POST_PROCESS_ASTEROID_FOG,
-        POST_PROCESS_BLOOM_HIGH,
-        POST_PROCESS_BLOOM_LOW,
-        POST_PROCESS_INCURSION_OVERLAY,
+        PP_GROUP_FOG,
+        PP_GROUP_BLOOM,
+        PP_GROUP_LUT,
         POST_PROCESS_DESATURATE
     ]
 
@@ -153,16 +166,16 @@ class EvePostProcessingJob(object):
         for _ in self._postProcessOrder:
             self.postProcesses.append(None)
 
-    def _FindPostProcess(self, id):
+    def _FindPostProcess(self, ppID):
         index = -1
         postProcess = None
         for postProcess in self.postProcesses:
-            if getattr(postProcess, "name", None) == id:
+            if getattr(postProcess, "name", None) == ppID:
                 index = self.postProcesses.index(postProcess)
                 break
 
         if index < 0 and id in self._postProcessOrder:
-            index = self._postProcessOrder.index(id)
+            index = self._postProcessOrder.index(ppID)
             postProcess = self.postProcesses[index]
         if index < 0:
             postProcess = None
@@ -200,40 +213,47 @@ class EvePostProcessingJob(object):
                 postProcesses.append(each)
         return postProcesses
 
-    def GetPostProcess(self, id):
+    def GetPostProcess(self, ppID):
         """
         Returns a post process(EvePostProcess) with the id provided(or None if it's not found)
         """
-        return self._FindPostProcess(id)[0]
+        return self._FindPostProcess(self.GetGroupOrID(ppID))[0]
 
-    def AddPostProcess(self, id, path=None, key=None):
+    def GetGroupOrID(self, ppID):
+        ppIDOrGroup = ppID
+        if ppID in POST_PROCESS_GROUPS:
+            ppIDOrGroup = POST_PROCESS_GROUPS[ppID]
+        return ppIDOrGroup
+
+    def AddPostProcess(self, ppID, path=None, key=None):
         '''
         Adds a post process which is loaded from path and updates post processing steps
         (id) -> unique identifier for the post process
         (path) -> the value to assign to variable
         (key) -> optional parameter, post process will only be active if this is the current active key(see SetActiveKey)
         '''
-        postProcess, i = self._FindPostProcess(id)
+        ppIDOrGroup = self.GetGroupOrID(ppID)
 
+        postProcess, i = self._FindPostProcess(ppIDOrGroup)
         if path is None:
-            if id not in POST_PROCESS_PATHS:
+            if ppID not in POST_PROCESS_PATHS:
                 return
-            path = POST_PROCESS_PATHS[id]
+            path = POST_PROCESS_PATHS[ppID]
 
-        if id in self._postProcessOrder:
-            i = self._postProcessOrder.index(id)
+        if ppIDOrGroup in self._postProcessOrder:
+            i = self._postProcessOrder.index(ppIDOrGroup)
             postProcess = self.postProcesses[i]
             if postProcess is None:
                 self.liveCount += 1
-                postProcess = self.postProcesses[i] = EvePostProcess(id, path, key)
+                postProcess = self.postProcesses[i] = EvePostProcess(ppIDOrGroup, path, key)
             elif postProcess.path != path:
-                postProcess = self.postProcesses[i] = EvePostProcess(id, path, key)
+                postProcess = self.postProcesses[i] = EvePostProcess(ppIDOrGroup, path, key)
         elif postProcess is None:
             self.liveCount += 1
-            postProcess = EvePostProcess(id, path, key)
+            postProcess = EvePostProcess(ppIDOrGroup, path, key)
             self.postProcesses.append(postProcess)
         elif postProcess.path != path:
-            postProcess = self.postProcesses[i] = EvePostProcess(id, path, key)
+            postProcess = self.postProcesses[i] = EvePostProcess(ppIDOrGroup, path, key)
 
         if self.prepared:
             postProcess.Prepare(self.source)
@@ -241,14 +261,15 @@ class EvePostProcessingJob(object):
         self.CreateSteps()
         return postProcess
 
-    def RemovePostProcess(self, id):
+    def RemovePostProcess(self, ppID):
         '''
         Removes post process with id and rebuilds post processing steps
         (id) -> unique identifier for the post process
         '''
         index = -1
+        ppIDOrGroup = self.GetGroupOrID(ppID)
         for each in self.postProcesses:
-            if getattr(each, "name", None) == id:
+            if getattr(each, "name", None) == ppIDOrGroup:
                 index = self.postProcesses.index(each)
                 break
 
@@ -259,22 +280,23 @@ class EvePostProcessingJob(object):
 
         self.postProcesses[index].RemoveSteps(self)
         self.postProcesses[index].Release()
-        if id in self._postProcessOrder:
+        if ppIDOrGroup in self._postProcessOrder:
             self.postProcesses[index] = None
         else:
             self.postProcesses.remove(each)
 
         self.CreateSteps()
 
-    def SetPostProcessVariable(self, id, variable, value):
+    def SetPostProcessVariable(self, ppID, variable, value):
         '''
         Sets a variable on a post process
         (id) -> the desired post process
         (variable) -> the variable name
         (value) -> the value to assign to variable
         '''
+        ppIDOrGroup = self.GetGroupOrID(ppID)
         for pp in self.postProcesses:
-            if pp is not None and pp.name == id:
+            if pp is not None and pp.name == ppIDOrGroup:
                 for effect in pp.postProcess.stages:
                     for param in effect.parameters:
                         if param.name == variable:
@@ -350,7 +372,7 @@ class EvePostProcessingJob(object):
         postProcesses = []
         for each in self.postProcesses:
             ppKey = getattr(each, "key", None)
-            if each is not None and each.name == POST_PROCESS_ASTEROID_FOG:
+            if each is not None and each.name == PP_GROUP_FOG:
                 if gfxsettings.Get(gfxsettings.GFX_SHADER_QUALITY) != gfxsettings.SHADER_MODEL_HIGH:
                     # we only want this effect on high shader model
                     continue

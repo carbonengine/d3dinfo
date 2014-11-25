@@ -760,15 +760,12 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         if self.postProcessingQuality == 1:
             self.postProcessingJob.AddPostProcess(evePostProcess.POST_PROCESS_BLOOM_LOW)
-            self.postProcessingJob.RemovePostProcess(evePostProcess.POST_PROCESS_BLOOM_HIGH)
             self.sceneDesaturation.Enable()
         elif self.postProcessingQuality == 2:
             self.postProcessingJob.AddPostProcess(evePostProcess.POST_PROCESS_BLOOM_HIGH)
-            self.postProcessingJob.RemovePostProcess(evePostProcess.POST_PROCESS_BLOOM_LOW)
             self.sceneDesaturation.Enable()
         else:
-            self.postProcessingJob.RemovePostProcess(evePostProcess.POST_PROCESS_BLOOM_HIGH)
-            self.postProcessingJob.RemovePostProcess(evePostProcess.POST_PROCESS_BLOOM_LOW)
+            self.postProcessingJob.RemovePostProcess(evePostProcess.PP_GROUP_BLOOM)
             self.sceneDesaturation.Disable()
 
 
