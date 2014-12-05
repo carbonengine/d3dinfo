@@ -49,6 +49,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         "CAMERA_UPDATE",
         "SET_PROJECTION",
         "SET_VIEW",
+        "UPDATE_BRACKETS",
         "CLEAR",
         "BEGIN_RENDER",
         "RENDER_BACKGROUND",
