@@ -128,6 +128,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.msaaType = 4
 
         self.distortionEffectsEnabled = False
+        self.secondaryLighting = False
         
         self.fxaaEffect = None
         
@@ -283,6 +284,15 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         else:
             scene.shadowMap = None
 
+    def _SetSecondaryLighting(self):
+        scene = self.GetScene()
+        if scene is None:
+            return
+        if self.secondaryLighting:
+            scene.shLightingManager = trinity.Tr2ShLightingManager()
+            scene.shLightingManager.intensity = 3
+        else:
+            scene.shLightingManager = None
 
     def ForceDepthPass(self, enabled):
         """ Force a special depth pass under SM_3_0_DEPTH """
@@ -497,7 +507,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.aaQuality = currentSettings["aaQuality"]
         self.hdrEnabled = currentSettings["hdrEnabled"]
 
-        self.distortionEffectsEnabled = self.useDepth = trinity.GetShaderModel().endswith("DEPTH")
+        self.secondaryLighting = self.distortionEffectsEnabled = self.useDepth = trinity.GetShaderModel().endswith("DEPTH")
 
         # Apply settings override, usually used by special case rendering(like the photo service)
         if "hdrEnabled" in self.overrideSettings:
@@ -796,6 +806,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._SetShadowMap()
         self._SetDepthMap()
         self._SetDistortionMap()
+        self._SetSecondaryLighting()
 
 
     def SetMultiViewStage(self, stageKey): 
