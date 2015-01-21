@@ -289,9 +289,10 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         if scene is None:
             return
         if self.secondaryLighting:
-            scene.shLightingManager = trinity.Tr2ShLightingManager()
-            scene.shLightingManager.primaryIntensity = gfxsettings.SECONDARY_LIGHTING_INTENSITY
-            scene.shLightingManager.secondaryIntensity = gfxsettings.SECONDARY_LIGHTING_INTENSITY
+            if not scene.shLightingManager:
+                scene.shLightingManager = trinity.Tr2ShLightingManager()
+                scene.shLightingManager.primaryIntensity = gfxsettings.SECONDARY_LIGHTING_INTENSITY
+                scene.shLightingManager.secondaryIntensity = gfxsettings.SECONDARY_LIGHTING_INTENSITY
         else:
             scene.shLightingManager = None
 
