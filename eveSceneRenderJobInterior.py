@@ -8,7 +8,6 @@ from . import _singletons
 from . import _trinity as trinity
 from .sceneRenderJobBase import SceneRenderJobBase
 from .renderJobUtils import renderTargetManager as rtm
-from . import interiorVisualizations as iVis
 from . import renderSSAOJob
 
 
@@ -237,95 +236,7 @@ class EveSceneRenderJobInterior(SceneRenderJobBase):
     ]
 
     # List of classes that know how to modify this renderjob to apply visualizations
-    visualizations = [
-        iVis.DisableVisualization,
-        ("Geometry",
-            [
-                iVis.WhiteVisualization,
-                iVis.ObjectNormalVisualization,
-                iVis.TangentVisualization, 
-                iVis.BiTangentVisualization,
-                iVis.TexCoord0Visualization,
-                iVis.TexCoord1Visualization,
-                iVis.TexelDensityVisualization,
-                iVis.OverdrawVisualization,
-                iVis.DepthVisualization,
-            ]
-        ),     
-        ("Textures",
-            [
-                iVis.NormalMapVisualization,
-                iVis.SpecularMapVisualization,        
-                iVis.DiffuseMapVisualization,
-                iVis.EveAlbedoVisualization,
-            ]
-        ),        
-        ("Lighting",
-            [
-                ("Enlighten",
-                    [
-                        iVis.EnlightenDetailChartsVisualization,
-                        iVis.EnlightenTargetChartsVisualization,
-                        iVis.EnlightenOnlyVisualization,
-                        iVis.EnlightenTargetDetailVisualization,
-                        iVis.EnlightenOutputDensityVisualization,                        
-                        iVis.EnlightenAlbedoVisualization,
-                        iVis.EnlightenEmissiveVisualization,
-                        iVis.EnlightenObjectTexcoordVisualization,
-                        iVis.EnlightenNaughtyPixelsVisualization,
-                    ]
-                ),      
-                ("All Light Volumes",
-                    [
-                        iVis.LightVolumeWhiteVisualization,
-                        iVis.LightVolumeNormalVisualization,
-                        iVis.LightVolumeShadowResolutionVisualization,
-                        iVis.LightVolumeShadowRelativeResolutionVisualization,
-                    ]
-                ),
-                ("Primary Light Volumes",
-                    [
-                        iVis.PrimaryLightVolumeWhiteVisualization,
-                        iVis.PrimaryLightVolumeNormalVisualization,
-                        iVis.PrimaryLightVolumeShadowResolutionVisualization,
-                        iVis.PrimaryLightVolumeShadowRelativeResolutionVisualization,
-                    ]
-                ),
-                ("Secondary Light Volumes",
-                    [
-                        iVis.SecondaryLightVolumeWhiteVisualization,
-                        iVis.SecondaryLightVolumeNormalVisualization,
-                        iVis.SecondaryLightVolumeShadowResolutionVisualization,
-                        iVis.SecondaryLightVolumeShadowRelativeResolutionVisualization,
-                    ]
-                ),
-                ("Shadowcasting Light Volumes",
-                    [
-                        iVis.ShadowcastingLightVolumeWhiteVisualization,
-                        iVis.ShadowcastingLightVolumeNormalVisualization,
-                        iVis.ShadowcastingLightVolumeShadowResolutionVisualization,
-                        iVis.ShadowcastingLightVolumeShadowRelativeResolutionVisualization,
-                    ]
-                ),
-                ("Transparent Light Volumes", 
-                    [
-                        iVis.TransparentLightVolumeWhiteVisualization,
-                        iVis.TransparentLightVolumeNormalVisualization,
-                        iVis.TransparentLightVolumeShadowResolutionVisualization,
-                        iVis.TransparentLightVolumeShadowRelativeResolutionVisualization,
-                    ]
-                ),
-                iVis.AllLightingVisualization,
-                iVis.PrePassLightingOnlyVisualization,
-                iVis.PrePassLightingDiffuseVisualization,
-                iVis.PrePassLightingSpecularVisualization,
-                iVis.PrePassLightNormalVisualization,
-                iVis.PrePassLightDepthVisualization,
-                iVis.PrePassLightWorldPositionVisualization,
-                iVis.PrePassLightOverdrawVisualization,
-            ]
-        ),
-    ]
+    visualizations = []
     
     def _ManualInit(self, name="EveSceneRenderJobInterior"):
         """
@@ -611,7 +522,6 @@ class EveSceneRenderJobInterior(SceneRenderJobBase):
 
         if 'environmentLighting' in data:
             scene.backgroundCubemapPath = data['environmentLighting']['cubeMap']
-            scene.environmentLightingMultiplier = data['environmentLighting']['multiplier']
 
         self.fogTexturePath = data['fog']['texture']
         texture = blue.resMan.GetResource(self.fogTexturePath)
@@ -632,7 +542,6 @@ class EveSceneRenderJobInterior(SceneRenderJobBase):
         """
         scene.maxFogAmount = 0
         scene.backgroundCubemapPath = ''
-        scene.environmentLightingMultiplier = 0
         self.fogTexturePath = ''
         self.AddStep("SET_FOG_MAP", trinity.TriStepSetVariableStore("FogRampMap", trinity.TriTextureRes()))
         self.EnableLUT(False)
