@@ -173,16 +173,16 @@ def AddMaterialParam(material, name, value):
     Helper function to add a new parameter to shader material.
     """
     if type(value) == trinity.TriTextureRes:
-        param = trinity.TriTexture2DParameter()
+        param = trinity.TriTextureParameter()
         param.name = name
         param.SetResource(value)
     elif type(value) == trinity.Tr2RenderTarget:
-        param = trinity.TriTexture2DParameter()
+        param = trinity.TriTextureParameter()
         param.name = name
         t = trinity.TriTextureRes(value)
         param.SetResource(t)
     elif type(value) == trinity.Tr2DepthStencil:
-        param = trinity.TriTexture2DParameter()
+        param = trinity.TriTextureParameter()
         param.name = name
         t = trinity.TriTextureRes(value)
         param.SetResource(t)

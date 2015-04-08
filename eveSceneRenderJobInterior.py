@@ -1109,13 +1109,13 @@ class EveSceneRenderJobInterior(SceneRenderJobBase):
         else:
             rebind = False
             if 'LUTMap0' not in self.postProcessShader.parameters:
-                param = trinity.TriTexture2DParameter()
+                param = trinity.TriTextureParameter()
                 param.name = 'LUTMap0'
                 self.postProcessShader.parameters['LUTMap0'] = param
                 rebind = True
             self.postProcessShader.parameters['LUTMap0'].SetResource(LUTMap0)
             if 'LUTMap1' not in self.postProcessShader.parameters:
-                param = trinity.TriTexture2DParameter()
+                param = trinity.TriTextureParameter()
                 param.name = 'LUTMap1'
                 self.postProcessShader.parameters['LUTMap1'] = param
                 rebind = True
@@ -1334,7 +1334,7 @@ class EveSceneRenderJobInterior(SceneRenderJobBase):
 
                     self.postProcessShader.defaultSituation += ' Noise'
 
-                noise = trinity.TriTexture2DParameter()
+                noise = trinity.TriTextureParameter()
                 noise.name = 'NoiseMap'
                 noise.resourcePath = 'res:/Texture/Global/noise.dds'
                 self.postProcessShader.parameters['NoiseMap'] = noise

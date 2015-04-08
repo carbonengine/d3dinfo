@@ -69,12 +69,12 @@ class SceneRenderJobSpaceEmbedded(SceneRenderJobSpace):
         self.stencilBlitEffect = trinity.Tr2Effect()
         self.stencilBlitEffect.effectFilePath = "res:/Graphics/Effect/Managed/Space/system/BlitStencil.fx"
 
-        stencilMap = trinity.TriTexture2DParameter()
+        stencilMap = trinity.TriTextureParameter()
         stencilMap.name = "StencilMap"
         stencilMap.resourcePath = self.stencilPath
         self.stencilBlitEffect.resources.append(stencilMap)
 
-        self.blitMapParameter = trinity.TriTexture2DParameter()
+        self.blitMapParameter = trinity.TriTextureParameter()
         self.blitMapParameter.name = "BlitSource"
         self.stencilBlitEffect.resources.append(self.blitMapParameter)
 
