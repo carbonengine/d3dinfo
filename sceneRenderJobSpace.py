@@ -57,6 +57,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         "RENDER_MAIN_PASS",
         "DO_DISTORTIONS",
         "END_RENDERING",
+        "DO_TAA",
         "RENDER_DEBUG",
         "UPDATE_TOOLS", 
         "RENDER_PROXY", 
@@ -103,7 +104,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.depthTexture = None
         self.blitTexture = None
         self.distortionTexture = None
-
+        self.accumulationBuffer = None
+        
         # The shadow map
         self.shadowMap = None
         
@@ -131,12 +133,16 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.secondaryLighting = False
         
         self.fxaaEffect = None
+        self.taaEnabled = False
+        self.taaPixelOffset = 0.5
+        self.taaPattern = 4
         
         self.bbFormat = _singletons.device.GetRenderContext().GetBackBufferFormat()
 
         self.prepared = False
 
         self.postProcessingJob = evePostProcess.EvePostProcessingJob()
+        self.taaJob = evePostProcess.EvePostProcessingJob()
         self.distortionJob = evePostProcess.EvePostProcessingJob()
         self.backgroundDistortionJob = evePostProcess.EvePostProcessingJob()
 
@@ -359,6 +365,25 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         return self.GetBackBufferRenderTarget()
 
 
+    def _CreateTaaStep(self):
+        rj = trinity.TriRenderJob()
+
+        scene = self.GetScene()
+        if scene is not None:
+            self.taaJob.SetPostProcessPSData(scene.GetPostProcessPSBuffer())
+
+        # Run the TAA post process
+        rj.steps.append(trinity.TriStepRunJob(self.taaJob))
+        # Copy the current framebuffer
+        rj.steps.append(trinity.TriStepResolve(self.accumulationBuffer, self.customBackBuffer))
+
+        self.AddStep("DO_TAA", trinity.TriStepRunJob(rj))
+
+        taaTriTextureRes = trinity.TriTextureRes()
+        taaTriTextureRes.SetFromRenderTarget(self.accumulationBuffer)
+        self.taaJob.SetPostProcessVariable("TAA", "LastFrame", taaTriTextureRes)
+
+
     def _CreateDepthPass(self):
         rj = trinity.TriRenderJob()
 
@@ -410,6 +435,10 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.SetStepAttr("END_RENDERING", 'scene', scene)
         self.SetStepAttr("RENDER_MAIN_PASS", 'scene', scene)
         self.SetStepAttr("SET_PERFRAME_DATA", 'scene', scene)
+        if scene is not None:
+            self.taaJob.SetPostProcessPSData(scene.GetPostProcessPSBuffer())
+        else:
+            self.taaJob.SetPostProcessPSData(None)
         self._CreateDepthPass()
         self._SetBackgroundScene(scene)
 
@@ -463,6 +492,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.blitTexture = None
 
         self.distortionTexture = None
+        self.accumulationBuffer = None
 
         self.postProcessingJob.Release()
         self.distortionJob.Release()
@@ -470,7 +500,9 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.sceneDesaturation.Disable()
         self.distortionJob.SetPostProcessVariable("Distortion", "TexDistortion", None)
         self.backgroundDistortionJob.SetPostProcessVariable("Distortion", "TexDistortion", None)
-
+        self.taaJob.Release()
+        self.taaJob.SetPostProcessVariable("TAA", "LastFrame", None)
+        self.taaJob.SetPostProcessPSData(None)
         self._SetDistortionMap()
 
         self._RefreshRenderTargets()
@@ -606,6 +638,18 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.distortionTexture = None
             self._SetDistortionMap()
 
+        # TAA
+        if self.taaEnabled and self.useDepth:
+            # Need some unused key
+            key = 3456
+            self.accumulationBuffer = rtm.GetRenderTargetAL(
+                width, height, 1,
+                blitFormat,
+                key)
+            self.accumulationBuffer.name = "accumulationBuffer"
+        else:
+            self.accumulationBuffer = None
+
 
     def _TargetDiffers(self, target, blueType, format, msType=0, width=0, height=0):
         if target is None:
@@ -637,6 +681,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
                     blue.BluePythonWeakRef(self.depthTexture),
                     blue.BluePythonWeakRef(self.blitTexture),
                     blue.BluePythonWeakRef(self.distortionTexture),
+                    blue.BluePythonWeakRef(self.accumulationBuffer),
                 )
         renderTargets = (x.object for x in self.renderTargetList)
         self.SetRenderTargets(*renderTargets)
@@ -703,6 +748,19 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             
         self._CreateRenderTargets()
         self._RefreshRenderTargets()
+
+
+    def EnableTAA(self, enable):
+        self.taaEnabled = enable
+        if enable and self.prepared and self.useDepth:
+            self.taaJob.AddPostProcess("TAA", "res:/fisfx/postprocess/taa.red")
+        else:
+            self.taaJob.RemovePostProcess("TAA")
+        self.ApplyPerformancePreferencesToScene()
+
+        self._CreateRenderTargets()
+        self._RefreshRenderTargets()
+        self._SetScene(self.GetScene())
 
 
     def EnableMSAA(self, enable):
@@ -798,6 +856,11 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.distortionJob.AddPostProcess("Distortion", "res:/fisfx/postprocess/distortion.red")
             self.backgroundDistortionJob.AddPostProcess("Distortion", "res:/fisfx/postprocess/distortion.red")
 
+        if self.taaEnabled and self.useDepth:
+            self.taaJob.AddPostProcess("TAA", "res:/fisfx/postprocess/taa.red")
+        else:
+            self.taaJob.RemovePostProcess("TAA")
+
         self._RefreshAntiAliasing()
         self._CreateRenderTargets()
         self._RefreshRenderTargets()
@@ -809,13 +872,22 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._SetDepthMap()
         self._SetDistortionMap()
         self._SetSecondaryLighting()
+        scene = self.GetScene()
+        if scene is None:
+            return
+        if self.taaEnabled and self.useDepth:
+            scene.pixelOffsetScale = self.taaPixelOffset
+            scene.taaSubpixelPattern = self.taaPattern
+        else:
+            scene.pixelOffsetScale = 0
+            scene.taaSubpixelPattern = 0
 
 
     def SetMultiViewStage(self, stageKey): 
         self.currentMultiViewStageKey = stageKey
 
 
-    def SetRenderTargets(self, customBackBuffer, customDepthStencil, depthTexture, blitTexture, distortionTexture):
+    def SetRenderTargets(self, customBackBuffer, customDepthStencil, depthTexture, blitTexture, distortionTexture, accumulationBuffer):
         """
         Set the required buffers on all the the renderjob steps.
         If any of these steps are missing, they will obviously not get set.
@@ -882,6 +954,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._RefreshPostProcessingJob(self.postProcessingJob, self.usePostProcessing and self.prepared)
         self._RefreshPostProcessingJob(self.distortionJob, self.distortionEffectsEnabled and self.prepared)
         self._RefreshPostProcessingJob(self.backgroundDistortionJob, self.distortionEffectsEnabled and self.prepared)
+        self._RefreshPostProcessingJob(self.taaJob, self.taaEnabled and self.prepared)
 
         if distortionTexture is not None:
             self.AddStep("DO_DISTORTIONS", trinity.TriStepRunJob(self.distortionJob))
@@ -891,6 +964,11 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.backgroundDistortionJob.SetPostProcessVariable("Distortion", "TexDistortion", distortionTriTextureRes)
         else:
             self.RemoveStep("DO_DISTORTIONS")
+
+        if accumulationBuffer is not None:
+            self._CreateTaaStep()
+        else:
+            self.RemoveStep("DO_TAA")
 
         self._CreateDepthPass()
 

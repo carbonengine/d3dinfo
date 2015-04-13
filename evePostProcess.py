@@ -106,7 +106,13 @@ class EvePostProcess(object):
         if name is not None:
             step.name = name
 
-    def AddSteps(self, rj):
+    def SetPSData(self, psData):
+        for each in self.steps:
+            if each.__bluetype__ != "trinity.TriStepRenderEffect":
+                continue
+            each.shaderBuffer = psData
+
+    def AddSteps(self, rj, psData):
         """
         Appends all steps neccessary to render this post process to the renderjob.
         """
@@ -118,12 +124,12 @@ class EvePostProcess(object):
             value = (1.0 / self.swapSize[0], 1.0 / self.swapSize[1], self.swapSize[0], self.swapSize[1])
             self._AppendStep(rj, trinity.TriStepSetVariableStore("g_texelSize", value), "Set swap texelSize")
             self._AppendStep(rj, trinity.TriStepSetRenderTarget(self.buffer1), "Set RT")
-            self._AppendStep(rj, trinity.TriStepRenderEffect(effects[0]), effects[0].name)
+            self._AppendStep(rj, trinity.TriStepRenderEffect(effects[0], psData), effects[0].name)
 
             for i in range(1, len(effects) - 1):
                 self._AppendStep(rj, trinity.TriStepSetRenderTarget(self.buffer2), "Swap RT")
                 self._AppendStep(rj, trinity.TriStepSetVariableStore("BlitCurrent", self.buffer1), "Override var BlitCurrent")
-                self._AppendStep(rj, trinity.TriStepRenderEffect(effects[i]), effects[i].name)
+                self._AppendStep(rj, trinity.TriStepRenderEffect(effects[i], psData), effects[i].name)
                 self._SwapBuffers()
 
             self._AppendStep(rj, trinity.TriStepSetVariableStore("BlitCurrent", self.buffer1), "Override var BlitCurrent")
@@ -163,6 +169,7 @@ class EvePostProcessingJob(object):
         self.liveCount = 0
         self.prepared = False
         self.key = None
+        self.postProcessPSData = None
         # If we want specific post processes to run first we add them to the postProcessOrder list
         # and add a None entry for them into the postProcesses list.
         self.postProcesses = []
@@ -323,9 +330,15 @@ class EvePostProcessingJob(object):
         #Set the variable store, these are used by all eve space postprocessing
         self._AppendStep("Set var BlitOriginal", trinity.TriStepSetVariableStore("BlitOriginal", self.resolveTarget), job)
         self._AppendStep("Set var BlitCurrent", trinity.TriStepSetVariableStore("BlitCurrent", self.resolveTarget), job)
-        pp.AddSteps(job)
+        pp.AddSteps(job, self.postProcessPSData)
 
         self._AppendStep(job.name, trinity.TriStepRunJob(job))
+
+    def SetPostProcessPSData(self, psData):
+        self.postProcessPSData = psData
+        for pp in self.postProcesses:
+            if pp is not None:
+                pp.SetPSData(psData)
 
     def Prepare(self, source, blitTexture, destination=None):
         """
