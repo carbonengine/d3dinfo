@@ -375,7 +375,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         # Run the TAA post process
         rj.steps.append(trinity.TriStepRunJob(self.taaJob))
         # Copy the current framebuffer
-        rj.steps.append(trinity.TriStepResolve(self.accumulationBuffer, self.customBackBuffer))
+        rj.steps.append(trinity.TriStepResolve(self.accumulationBuffer, self._GetSourceRTForPostProcessing()))
 
         self.AddStep("DO_TAA", trinity.TriStepRunJob(rj))
 
