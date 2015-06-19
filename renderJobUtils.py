@@ -89,6 +89,12 @@ class RenderTargetManager(object):
 
 def DeviceSupportsIntZ():
     adapters = _singletons.adapters
+
+    if adapters.GetAdapterCount() == 0:
+        # Software rendering under DX11, we are no longer required to have an adapter
+        # the internal C++ function needs to be updated to use a non-deprecated technique
+        # to determine support (used by Paparazzi and other services)
+        return True
     
     return adapters.SupportsDepthStencilFormat(
         adapters.DEFAULT_ADAPTER,
@@ -98,6 +104,12 @@ def DeviceSupportsIntZ():
 
 def DeviceSupportsRenderTargetFormat( format ):
     adapters = _singletons.adapters
+
+    if adapters.GetAdapterCount() == 0:
+        # Software rendering under DX11, we are no longer required to have an adapter
+        # the internal C++ function needs to be updated to use a non-deprecated technique
+        # to determine support (used by Paparazzi and other services)
+        return True
     
     return adapters.GetDepthStencilMsaaSupport(
         adapters.DEFAULT_ADAPTER,
