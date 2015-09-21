@@ -372,11 +372,11 @@ class EveSceneRenderJobInterior(SceneRenderJobBase):
             currentScene.enableSHSolver = trinity.HasGlobalSituationFlag("OPT_INTERIOR_SM_HIGH")
 
     def _GetFXAAQuality(self, quality):
-        if quality == 3:
+        if quality >= gfxsettings.AA_QUALITY_MSAA_HIGH:
             return "FXAA_High"
-        elif quality == 2:
+        elif quality == gfxsettings.AA_QUALITY_MSAA_MEDIUM:
             return "FXAA_Medium"
-        elif quality == 1:
+        elif quality == gfxsettings.AA_QUALITY_MSAA_LOW:
             return "FXAA_Low"
 
         return ""

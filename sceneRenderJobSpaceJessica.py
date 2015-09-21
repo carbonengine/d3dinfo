@@ -96,7 +96,6 @@ class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
     def _SetSettingsBasedOnPerformancePreferences(self):
         self.aaQuality = self.settings["aaQuality"]
         self.antiAliasingEnabled = self.aaQuality > 0
-        self.antiAliasingQuality = self.aaQuality
         self.msaaType = self.GetMSAATypeFromQuality(self.aaQuality)
         
         self.fxaaQuality = self._GetFXAAQuality(self.aaQuality)

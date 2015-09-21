@@ -121,7 +121,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.useDepth = False
 
         self.antiAliasingEnabled = False
-        self.antiAliasingQuality = 0
         self.aaQuality = 0
         self.useFXAA = False
         self.fxaaEnabled = False
@@ -274,7 +273,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
     def _SetVelocityMap(self):
         """
-        Set depth map to the scene
+        Set velocity map to the scene
         """
         if not self.enabled:
             return
@@ -720,17 +719,17 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
     def _RefreshAntiAliasing(self):
         if "aaQuality" not in self.overrideSettings:
-            self.antiAliasingQuality = self.aaQuality = gfxsettings.Get(gfxsettings.GFX_ANTI_ALIASING)
+            self.msaaQuality = self._GetMSAAQualityFromAAQuality(gfxsettings.Get(gfxsettings.GFX_ANTI_ALIASING))
 
-        self.taaEnabled = gfxsettings.Get(gfxsettings.GFX_TAA) and _singletons.platform == 'dx11' and self.useDepth
-        if self.taaEnabled and self.prepared and self.useDepth:
+        self.taaEnabled = gfxsettings.IsTAAEnabled(gfxsettings.Get(gfxsettings.GFX_ANTI_ALIASING)) and _singletons.platform == 'dx11' and self.useDepth
+        if self.taaEnabled and self.prepared:
             self.taaJob.AddPostProcess("TAA", self.taaPath)
         else:
             self.taaJob.RemovePostProcess("TAA")
         # Graphics Settings: Again, avoiding this call would be preferrable, 
         # perhaps a util function in evegraphics
-        self.msaaType = self._GetMSAATypeFromQuality(self.antiAliasingQuality)
-        self.fxaaQuality = self._GetFXAAQuality(self.antiAliasingQuality)
+        self.msaaType = self._GetMSAATypeFromQuality(self.aaQuality)
+        self.fxaaQuality = self._GetFXAAQuality(self.aaQuality)
 
         if self.useFXAA:
             self.EnableFXAA(self.antiAliasingEnabled)
@@ -786,19 +785,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._RefreshRenderTargets()
 
 
-    def EnableTAA(self, enable):
-        self.taaEnabled = enable
-        if enable and self.prepared and self.useDepth:
-            self.taaJob.AddPostProcess("TAA", self.taaPath)
-        else:
-            self.taaJob.RemovePostProcess("TAA")
-        self.ApplyPerformancePreferencesToScene()
-
-        self._CreateRenderTargets()
-        self._RefreshRenderTargets()
-        self._SetScene(self.GetScene())
-
-
     def EnableMSAA(self, enable):
         self.msaaEnabled = enable
 
@@ -831,15 +817,24 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
 
     def _GetFXAAQuality(self, quality):
-        if quality == 3:
+        if quality >= gfxsettings.AA_QUALITY_MSAA_HIGH:
             return "FXAA_High"
-        elif quality == 2:
+        elif quality == gfxsettings.AA_QUALITY_MSAA_MEDIUM:
             return "FXAA_Medium"
-        elif quality == 1:
+        elif quality == gfxsettings.AA_QUALITY_MSAA_LOW:
             return "FXAA_Low"
 
         return ""
 
+    def _GetMSAAQualityFromAAQuality(self, aaQuality):
+        qual = gfxsettings.AA_QUALITY_MSAA_HIGH
+        try:
+            if sm.IsServiceRunning("device"):
+                qual = sm.GetService("device").GetMSAAQualityFromAAQuality(aaQuality)
+        except NameError:
+            pass
+
+        return qual & gfxsettings.AA_QUALITY_MASK
 
     def _GetMSAATypeFromQuality(self, aaQuality):
         msaaType = 8
@@ -853,10 +848,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
 
     def _SetSettingsBasedOnPerformancePreferences(self):
-        self.antiAliasingEnabled = self.aaQuality > 0
-        self.antiAliasingQuality = self.aaQuality
-
-
+        self.msaaQuality = self._GetMSAAQualityFromAAQuality(self.aaQuality)
+        self.antiAliasingEnabled = self.msaaQuality > 0 or self.useFXAA
         self.msaaType = self._GetMSAATypeFromQuality(self.aaQuality)
         self.fxaaQuality = self._GetFXAAQuality(self.aaQuality)
 
