@@ -156,6 +156,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         self.updateJob = CreateRenderJob(name + "_Update")
         self.updateJob.scheduled = False
+
+        self.gpuParticlesEnabled = True
         
 
     def Enable(self, schedule=True):
@@ -400,8 +402,12 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         velocityTriTextureRes = trinity.TriTextureRes()
         velocityTriTextureRes.SetFromRenderTarget(self.velocityTexture)
-        self.taaJob.SetPostProcessVariable("TAA", "VelocityMap", velocityTriTextureRes)
-
+        if self.msaaEnabled:
+            self.taaJob.SetPostProcessVariable("TAA", "VelocityMapMsaa", velocityTriTextureRes)
+            self.taaJob.SetPostProcessVariable("TAA", "VelocityMap", None)
+        else:
+            self.taaJob.SetPostProcessVariable("TAA", "VelocityMapMsaa", None)
+            self.taaJob.SetPostProcessVariable("TAA", "VelocityMap", velocityTriTextureRes)
 
     def _CreateDepthPass(self):
         rj = trinity.TriRenderJob()
@@ -523,6 +529,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.taaJob.Release()
         self.taaJob.SetPostProcessVariable("TAA", "LastFrame", None)
         self.taaJob.SetPostProcessVariable("TAA", "VelocityMap", None)
+        self.taaJob.SetPostProcessVariable("TAA", "VelocityMapMsaa", None)
         self.taaJob.SetPostProcessPSData(None)
         self._SetDistortionMap()
 
@@ -549,6 +556,10 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         currentSettings["postProcessingQuality"] = gfxsettings.Get(gfxsettings.GFX_POST_PROCESSING_QUALITY)
         currentSettings["shadowQuality"] = gfxsettings.Get(gfxsettings.GFX_SHADOW_QUALITY)
         currentSettings["aaQuality"] = gfxsettings.Get(gfxsettings.GFX_ANTI_ALIASING)
+        try:
+            currentSettings["gpuParticles"] = gfxsettings.Get(gfxsettings.UI_GPU_PARTICLES_ENABLED)
+        except gfxsettings.UninitializedSettingsGroupError:
+            currentSettings["gpuParticles"] = gfxsettings.GetDefault(gfxsettings.UI_GPU_PARTICLES_ENABLED)
 
         return currentSettings
 
@@ -561,6 +572,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.shadowQuality = currentSettings["shadowQuality"]
         self.aaQuality = currentSettings["aaQuality"]
         self.hdrEnabled = currentSettings["hdrEnabled"]
+        self.gpuParticlesEnabled = currentSettings.get("gpuParticles", True)
 
         self.secondaryLighting = self.distortionEffectsEnabled = self.useDepth = trinity.GetShaderModel().endswith("DEPTH")
 
@@ -660,25 +672,24 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self._SetDistortionMap()
 
         # TAA
-        if self.taaEnabled and self.useDepth:
-            # Need some unused key
-            key = 3456
+        if self.taaEnabled:
+            # Accumulation buffer
+            key = (id(self), "AccumulationBuffer")
             self.accumulationBuffer = rtm.GetRenderTargetAL(
                 width, height, 1,
                 blitFormat,
                 key)
             self.accumulationBuffer.name = "accumulationBuffer"
-        else:
-            self.accumulationBuffer = None
 
-        if self.taaEnabled:
+            # Velocity buffer
             if self.msaaEnabled:
-                self.velocityTexture = rtm.GetRenderTargetMsaaAL(width, height, trinity.PIXEL_FORMAT.R16G16_FLOAT, msaaType, 0, 987)
+                self.velocityTexture = rtm.GetRenderTargetMsaaAL(width, height, trinity.PIXEL_FORMAT.R16G16_FLOAT, msaaType, 0, "VelocityMap")
                 self.velocityTexture.name = "VelocityMapMSAA"
             else:
-                self.velocityTexture = rtm.GetRenderTargetAL(width, height, 1, trinity.PIXEL_FORMAT.R16G16_FLOAT, 987)
+                self.velocityTexture = rtm.GetRenderTargetAL(width, height, 1, trinity.PIXEL_FORMAT.R16G16_FLOAT, "VelocityMap")
                 self.velocityTexture.name = "VelocityMap"
         else:
+            self.accumulationBuffer = None
             self.velocityTexture = None
 
 
@@ -907,7 +918,12 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         scene = self.GetScene()
         if scene is None:
             return
-        if self.taaEnabled and self.useDepth:
+        if self.gpuParticlesEnabled:
+            if not scene.gpuParticleSystem:
+                scene.gpuParticleSystem = blue.resMan.LoadObject('res:/fisfx/gpuparticles/system.red')
+        else:
+            scene.gpuParticleSystem = None
+        if self.taaEnabled:
             scene.pixelOffsetScale = self.taaPixelOffset
             scene.taaSubpixelPattern = self.taaPattern
         else:
