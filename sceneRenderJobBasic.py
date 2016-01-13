@@ -77,7 +77,8 @@ class SceneRenderJobBasic( SceneRenderJobBase ):
             self.AddStep("SET_DEPTH", trinity.TriStepPushDepthStencil(self.GetSwapChain().depthStencilBuffer))
             self.AddStep("RESTORE_RENDERTARGET", trinity.TriStepPopRenderTarget())
             self.AddStep("RESTORE_DEPTH", trinity.TriStepPopDepthStencil())
-            self.AddStep("CLEAR", trinity.TriStepClear((0.0, 0.0, 0.0, 0.0), 1.0))
+            if not self.HasStep('CLEAR'):
+                self.AddStep("CLEAR", trinity.TriStepClear((0.0, 0.0, 0.0, 0.0), 1.0))
         else:
             self.RemoveStep("SET_RENDERTARGET")
             self.RemoveStep("SET_DEPTH")
