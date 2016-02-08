@@ -158,6 +158,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.updateJob.scheduled = False
 
         self.gpuParticlesEnabled = True
+
+        self.testPostProcess = None
         
 
     def Enable(self, schedule=True):
@@ -954,7 +956,9 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.AddStep("SET_CUSTOM_RT", trinity.TriStepPushRenderTarget(customBackBuffer))
             self.AddStep("SET_FINAL_RT", trinity.TriStepPopRenderTarget())
 
-            if self.msaaEnabled and not activePostProcessing:
+            if self.testPostProcess:
+                self.AddStep("FINAL_BLIT", trinity.TriStepRunJob(self.testPostProcess.renderJob))
+            elif self.msaaEnabled and not activePostProcessing:
                 if self.hdrEnabled:
                     self.AddStep("FINAL_BLIT", self._DoFormatConversionStep(blitTexture, customBackBuffer))
                 else:
@@ -999,6 +1003,9 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.RemoveStep("SET_VAR_DEPTH")
             self.RemoveStep("SET_VAR_DEPTH_MSAA")
 
+        if self.testPostProcess:
+            self.testPostProcess.SetSource(self._GetSourceRTForPostProcessing())
+            self.testPostProcess.SetDest(self._GetDestinationRTForPostProcessing())
         self._RefreshPostProcessingJob(self.postProcessingJob, self.usePostProcessing and self.prepared)
         self._RefreshPostProcessingJob(self.distortionJob, self.distortionEffectsEnabled and self.prepared)
         self._RefreshPostProcessingJob(self.backgroundDistortionJob, self.distortionEffectsEnabled and self.prepared)
