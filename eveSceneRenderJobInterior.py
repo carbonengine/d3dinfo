@@ -69,6 +69,7 @@ class EveSceneRenderJobInterior(SceneRenderJobBase):
         "SET_FOG_MAP",
         "RENDER_GATHER",
 
+        "SET_FULLSCREEN_RENDERMODE",
         "UPDATE_LUT",
         
         "SET_POST_PROCESS_DEPTH_STENCIL",
@@ -1349,6 +1350,8 @@ class EveSceneRenderJobInterior(SceneRenderJobBase):
             self.postProcessShader.BindLowLevelShader([])
 
             self.SetStepAttr("SET_GATHER_RT", 'renderTarget', self.gatherTarget)
+
+            self.AddStep("SET_FULLSCREEN_RENDERMODE", trinity.TriStepSetStdRndStates(trinity.RM_FULLSCREEN))
             self.AddStep("SET_VAR_POST_PROCESS_GATHER", trinity.TriStepSetVariableStore("GatherMap", self.gatherTarget))
             self.AddStep("SET_POST_PROCESS_DEPTH_STENCIL", trinity.TriStepPushDepthStencil(None))
             self.AddStep("RESTORE_DEPTH_STENCIL_FOR_TOOLS", trinity.TriStepPopDepthStencil())
@@ -1366,6 +1369,7 @@ class EveSceneRenderJobInterior(SceneRenderJobBase):
 
         else:
             self.RemoveStep("POST_PROCESS")
+            self.RemoveStep("SET_FULLSCREEN_RENDERMODE")
             self.RemoveStep("SET_VAR_POST_PROCESS_GATHER")
             self.RemoveStep("SET_POST_PROCESS_DEPTH_STENCIL")
             self.RemoveStep("RESTORE_DEPTH_STENCIL_FOR_TOOLS")
