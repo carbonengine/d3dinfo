@@ -470,7 +470,7 @@ class PostProcess(object):
         """
         Loads a YAML file with parameter values
         :param path: path to parameter YAML file
-        :jessica-file-open path: YAML files (*.yaml)|*.yaml
+        :jessica-param-widget path: filepath
         :jessica-favorite:
         """
         params = yamlext.load(blue.paths.GetFileContentsWithYield(path))
@@ -482,7 +482,7 @@ class PostProcess(object):
         """
         Save parameter values into a YAML file
         :param path: path to parameter YAML file
-        :jessica-file-save path: YAML files (*.yaml)|*.yaml
+        :jessica-param-widget path: filepath-save
         :jessica-favorite:
         """
         params = {}
@@ -625,7 +625,7 @@ steps:
         """
         Loads post-processing configuration from YAML file.
         :param path: path to YAML file
-        :jessica-file-open path: YAML files (*.yaml)|*.yaml
+        :jessica-param-widget path: filepath
         """
         self.Clear()
         self._data = yamlext.load(blue.paths.GetFileContentsWithYield(path))
