@@ -577,6 +577,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.gpuParticlesEnabled = currentSettings.get("gpuParticles", True)
 
         self.secondaryLighting = self.distortionEffectsEnabled = self.useDepth = trinity.GetShaderModel().endswith("DEPTH")
+        trinity.settings.SetValue('eveSpaceSceneDynamicLighting', trinity.GetShaderModel().endswith("DEPTH"))
 
         # Apply settings override, usually used by special case rendering(like the photo service)
         if "hdrEnabled" in self.overrideSettings:
@@ -917,6 +918,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._SetDistortionMap()
         self._SetVelocityMap()
         self._SetSecondaryLighting()
+        trinity.settings.SetValue('eveSpaceSceneDynamicLighting', trinity.GetShaderModel().endswith("DEPTH"))
         scene = self.GetScene()
         if scene is None:
             return
