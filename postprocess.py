@@ -150,6 +150,7 @@ class NumericParameter(Parameter):
     def __init__(self, name, data):
         super(NumericParameter, self).__init__(name, data)
         self.value = data['value']
+        self.currentValue = self.value
         if self._type == 'float':
             self.paramType = trinity.Tr2FloatParameter
         elif self._type == 'vector2':
@@ -160,6 +161,7 @@ class NumericParameter(Parameter):
             self.paramType = trinity.Tr2Vector4Parameter
         else:
             raise RuntimeError()
+        self._dependencies = _GetConditionDependencies(self.value) if isinstance(self.value, basestring) else []
 
     def _GetEffectParameter(self, effect, name):
         try:
@@ -171,13 +173,23 @@ class NumericParameter(Parameter):
         return param, 'value'
 
     def _ApplyToEffect(self, obj, name):
-        obj.value = self.value
+        obj.value = self.currentValue
 
     def GetValue(self):
-        return self.value
+        return self.currentValue
 
     def SetValue(self, value):
         self.value = value
+
+    def UpdateValue(self, parameters):
+        if isinstance(self.value, (str, unicode)):
+            self.currentValue = _EvaluateCondition(self.value, parameters)
+        else:
+            self.currentValue = self.value
+        super(NumericParameter, self).UpdateValue(parameters)
+
+    def GetDependencies(self):
+        return self._dependencies
 
 
 class BooleanParameter(Parameter):
@@ -446,6 +458,26 @@ PARAMETER_TYPES = {'condition': ConditionParameter, 'rendertarget': RenderTarget
                    'float': NumericParameter, 'bool': BooleanParameter, 'gpubuffer': GpuBufferParameter}
 
 
+def TopoSort(dependencies):
+    if not dependencies:
+        raise StopIteration()
+    data = dict(dependencies)
+    for k, v in data.items():
+        v.discard(k)
+    extra_items_in_deps = reduce(set.union, data.values()) - set(data.keys())
+    data.update({item:set() for item in extra_items_in_deps})
+    while True:
+        ordered = set(item for item,dep in data.items() if not dep)
+        if not ordered:
+            break
+        for each in ordered:
+            yield each
+        data = {item: (dep - ordered) for item,dep in data.items()
+                if item not in ordered}
+    if data:
+        raise RuntimeError("A cyclic dependency exists amongst %r" % dependencies)
+
+
 class PostProcess(object):
     def __init__(self):
         super(PostProcess, self).__setattr__('renderJob', trinity.TriRenderJob())
@@ -588,7 +620,7 @@ steps:
             changedParams = self._parameters.keys()
         cp = set(changedParams)
         for each in changedParams:
-            cp = cp.union(self._dependencies.get(each, []))
+            cp = cp.union({k for k, v in self._dependencies.iteritems() if each in v})
         return cp
 
     def _UpdateParameters(self, changedParams=None):
@@ -599,9 +631,10 @@ steps:
                 return -1
             return 0
 
-        changedParams = sorted(self._ExpandChangedParams(changedParams), dep_cmp)
-        for p in changedParams:
-            self._parameters[p].UpdateValue(self._parameters)
+        changedParams = self._ExpandChangedParams(changedParams)
+        for p in TopoSort(self._dependencies):
+            if p in changedParams:
+                self._parameters[p].UpdateValue(self._parameters)
 
         used = {k: False for k in self._parameters.iterkeys()}
         for params, condition, steps in self._stepDependencies:
@@ -635,20 +668,6 @@ steps:
         else:
             super(PostProcess, self).__setattr__('_loadPending', True)
 
-    def _FlattenDependencies(self, dependencies):
-        changed = True
-        while changed:
-            changed = False
-            for k, v in dependencies.iteritems():
-                for each in v:
-                    u = v.union(dependencies.get(each, set()))
-                    if u != v:
-                        v = u
-                        changed = True
-                if changed:
-                    dependencies[k] = v
-                    break
-
     def _LoadData(self, data):
         del self.__members__[:]
         self._dependencies.clear()
@@ -661,11 +680,11 @@ steps:
         for key, value in data.get('parameters', {}).iteritems():
             pt = PARAMETER_TYPES[_GetParameterType(value)]
             self._parameters[key] = pt(key, value)
+            self._dependencies[key] = set()
             for each in self._parameters[key].GetDependencies():
-                self._dependencies.setdefault(each, set()).add(key)
+                self._dependencies[key].add(each)
             self.__members__.append(key)
 
-        self._FlattenDependencies(self._dependencies)
         self._UpdateParameters()
 
         del self.renderJob.steps[:]
