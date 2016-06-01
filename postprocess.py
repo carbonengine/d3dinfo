@@ -86,6 +86,7 @@ def _EvaluateString(expression, parameters):
     except BaseException as e:
         params = []
         for k, v in parameters.iteritems():
+            # noinspection PyBroadException
             try:
                 params.append('%s = %s' % (k, v.GetValue()))
             except:
@@ -153,8 +154,8 @@ class Parameter(object):
         return ()
 
     def _UpdateBindings(self):
-        for obj, name, apply in self._bindings.itervalues():
-            apply(obj, name)
+        for obj, name, applyFunc in self._bindings.itervalues():
+            applyFunc(obj, name)
 
     def UpdateUsage(self, usage):
         usage[self.name] = True
@@ -423,6 +424,7 @@ class RenderTargetParameter(Parameter):
     def Load(self, parameters):
         if not self.rt:
             self.UpdateValue(parameters)
+
     def Unload(self):
         self.rt = None
         self._UpdateBindings()
@@ -494,14 +496,14 @@ def TopoSort(dependencies):
     for k, v in data.items():
         v.discard(k)
     extra_items_in_deps = reduce(set.union, data.values()) - set(data.keys())
-    data.update({item:set() for item in extra_items_in_deps})
+    data.update({item: set() for item in extra_items_in_deps})
     while True:
-        ordered = set(item for item,dep in data.items() if not dep)
+        ordered = set(item for item, dep in data.items() if not dep)
         if not ordered:
             break
         for each in ordered:
             yield each
-        data = {item: (dep - ordered) for item,dep in data.items()
+        data = {item: (dep - ordered) for item, dep in data.items()
                 if item not in ordered}
     if data:
         raise RuntimeError("A cyclic dependency exists amongst %r" % dependencies)
@@ -577,18 +579,12 @@ steps:
 -   type: Resolve
     name: Resolve Source into Dest
     condition: __sourcert__.multiSampleType > 1 and __destrt__
-    arguments:
-        -   __destrt__
-        -   __sourcert__
     parameters:
         destination: __destrt__
         source: __sourcert__
 -   type: Resolve
     name: Resolve Source into a Temp RT
     condition: __sourcert__.multiSampleType > 1 and not __destrt__
-    arguments:
-        -   _sourceCopy
-        -   __sourcert__
     parameters:
         destination: _sourceCopy
         source: __sourcert__
@@ -605,8 +601,6 @@ steps:
 -   type: RenderTexture
     name: Render to Dest
     condition: not __destrt__
-    arguments:
-        -   _source
     parameters:
         renderTarget: _source
 
@@ -615,6 +609,7 @@ steps:
 -   type: PopRenderTarget
     name: Restore RT 0
 """
+        # noinspection PyAttributeOutsideInit
         self._data = yamlext.loads(data)
         del self.renderJob.steps[:]
         if self.source:
@@ -657,13 +652,6 @@ steps:
         return cp
 
     def _UpdateParameters(self, changedParams=None):
-        def dep_cmp(a, b):
-            if a in self._dependencies.get(b, []):
-                return 1
-            if b in self._dependencies.get(a, []):
-                return -1
-            return 0
-
         changedParams = self._ExpandChangedParams(changedParams)
         for p in TopoSort(self._dependencies):
             if p in changedParams:
@@ -694,6 +682,7 @@ steps:
         :jessica-param-widget path: filepath
         """
         self.Clear()
+        # noinspection PyAttributeOutsideInit
         self._data = yamlext.load(blue.paths.GetFileContentsWithYield(path))
         if self.source:
             self._LoadData(self._data)
@@ -723,18 +712,10 @@ steps:
         del self.renderJob.steps[:]
 
         for each in data.get('steps', []):
-            args = []
-            if 'arguments' in each:
-                for value in each['arguments']:
-                    if isinstance(value, basestring):
-                        args.append(self._parameters[value].GetValue())
-                    else:
-                        args.append(value)
-
             usedParameters = set()
-            step = getattr(trinity, 'TriStep%s' % each['type'])(*tuple(args))
+            step = getattr(trinity, 'TriStep%s' % each['type'])()
             for key, value in each.iteritems():
-                if key not in ('type', 'parameters', 'effectParameters', 'condition', 'renderTargets', 'arguments'):
+                if key not in ('type', 'parameters', 'effectParameters', 'condition', 'renderTargets'):
                     if isinstance(value, dict):
                         reader = blue.DictReader()
                         value = reader.CreateObject(value)
@@ -769,7 +750,8 @@ steps:
                 usedParameters.add(rt)
             self.renderJob.steps.append(step)
             if 'condition' in each:
-                self._stepDependencies.append((usedParameters.union(_GetConditionDependencies(each['condition'])), each['condition'], steps))
+                self._stepDependencies.append((usedParameters.union(_GetConditionDependencies(each['condition'])),
+                                               each['condition'], steps))
             else:
                 self._stepDependencies.append((usedParameters, None, steps))
 
@@ -779,13 +761,13 @@ steps:
         tempVars = {}
         for each in data.get('steps', []):
             for key, value in each.get('parameters', {}).iteritems():
-                if isinstance(value, basestring) and not _IsIdentifier(value):
+                if isinstance(value, basestring) and not _IsIdentifier(value) and value not in tempVars:
                     name = '_ppTemp%s' % len(tempVars)
                     val = _EvaluateString(value, self._parameters)
                     self._AddVariable(name, {'value': value, 'type': _GetValueType(val)})
                     tempVars[value] = name
             for key, value in each.get('effectParameters', {}).iteritems():
-                if isinstance(value, basestring) and not _IsIdentifier(value):
+                if isinstance(value, basestring) and not _IsIdentifier(value) and value not in tempVars:
                     name = '_ppTemp%s' % len(tempVars)
                     val = _EvaluateString(value, self._parameters)
                     self._AddVariable(name, {'value': value, 'type': _GetValueType(val)})
