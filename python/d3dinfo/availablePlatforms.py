@@ -64,6 +64,7 @@ def GetAvailablePlatforms():
 
     if sys.platform.startswith("linux") or sys.platform.startswith("darwin"):
         platforms.append("gles2")
+        platforms.append("gl4")
     else:
         if IsD3D9Valid():
             platforms.append("dx9")
@@ -73,6 +74,7 @@ def GetAvailablePlatforms():
 
         if not blue.pyos.packaged:
             platforms.append("gles2")
+            platforms.append("gl4")
 
         platforms.append("stub")
 
