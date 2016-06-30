@@ -195,7 +195,7 @@ class SceneRenderJobCharacters( SceneRenderJobBase ):
             self.RemoveStep("UPDATE_BACKDROP")
             self.RemoveStep("RENDER_BACKDROP")
 
-    def SetActiveCamera( self, camera ):
+    def SetActiveCamera( self, camera, *args ):
         """
         This call adds or removes the steps nessecary for controlling the camera
         depending on if 'camera' is None
