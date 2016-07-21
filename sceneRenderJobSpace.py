@@ -1091,6 +1091,30 @@ class SceneDesaturation(ScenePostProcessWrapper):
 
 
 class SceneFadeOut(ScenePostProcessWrapper):
-    attrName = "Influence"
+    attrName = "Color"
     ppType = evePostProcess.POST_PROCESS_FADE_OUT
-    initial_value = 0.0, 1.0, 1.0, 1.0
+    initial_value = 0.0, 0.0, 0.0, 0.0
+
+    def __init__(self, ppJob):
+        ScenePostProcessWrapper.__init__(self, ppJob)
+        self._value = self.initial_value
+
+    @property
+    def color(self):
+        return self._value[:3]
+
+    @color.setter
+    def color(self, c):
+        self.value = c + (self._value[3], )
+
+    @property
+    def opacity(self):
+        return self._value[3]
+
+    @opacity.setter
+    def opacity(self, c):
+        self.value = self._value[:3] + (c, )
+
+
+
+
