@@ -327,7 +327,7 @@ class BuiltinRenderTargetParameter(Parameter):
         self.texture.SetFromRenderTarget(self.rt)
 
     def GetValue(self):
-        return self.rt or trinity.Tr2RenderTarget()
+        return self.rt
 
     def SetValue(self, value):
         self.rt = value
@@ -631,7 +631,7 @@ steps:
         :param source: Source render target
         """
         super(PostProcess, self).__setattr__('source', source)
-        self._SetVariable('__sourcert__', source)
+        self._SetVariable('__sourcert__', source or trinity.Tr2RenderTarget())
         self.renderJob.enabled = True if source else False
         if self.source and self._loadPending:
             self._LoadData(self._data)
