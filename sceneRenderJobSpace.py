@@ -8,6 +8,7 @@ from .renderJob import CreateRenderJob
 from .sceneRenderJobBase import SceneRenderJobBase
 from .renderJobUtils import renderTargetManager as rtm
 from . import evePostProcess
+from .postprocess import PostProcess
 
 logger = logging.getLogger(__name__)
 
@@ -145,14 +146,11 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         self.prepared = False
 
-        self.postProcessingJob = evePostProcess.EvePostProcessingJob()
+        self.postProcess = PostProcess()
+        self.postProcess.Load('res:/fisfx/postprocess/eve.yaml')
         self.taaJob = evePostProcess.EvePostProcessingJob()
         self.distortionJob = evePostProcess.EvePostProcessingJob()
         self.backgroundDistortionJob = evePostProcess.EvePostProcessingJob()
-
-        self.sceneDesaturation = SceneDesaturation(self.postProcessingJob)
-        self.sceneFadeOut = SceneFadeOut(self.postProcessingJob)
-        self.sceneFadeOut.Enable()
 
         self.overrideSettings = {}
 
@@ -163,8 +161,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         self.gpuParticlesEnabled = True
 
-        self.testPostProcess = None
-        
 
     def Enable(self, schedule=True):
         SceneRenderJobBase.Enable(self, schedule)
@@ -265,8 +261,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.activeSceneKey = key
         self.SetScene(scene)
 
-        self.postProcessingJob.SetActiveKey(key)
-
 
     def _SetDepthMap(self):
         """
@@ -351,10 +345,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         """
         Indicate weather post processing is allowed or not
         """
-        if enabled:
-            self.AddStep("RJ_POSTPROCESSING", trinity.TriStepRunJob(self.postProcessingJob))
-        else:
-            self.RemoveStep("RJ_POSTPROCESSING")
+        pass
 
 
     def _RefreshPostProcessingJob(self, job, enabled):
@@ -566,11 +557,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.accumulationBuffer = None
         self.velocityTexture = None
 
-        self.postProcessingJob.Release()
         self.distortionJob.Release()
         self.backgroundDistortionJob.Release()
-        self.sceneDesaturation.Disable()
-        self.sceneFadeOut.Disable()
         self.distortionJob.SetPostProcessVariable("Distortion", "TexDistortion", None)
         self.backgroundDistortionJob.SetPostProcessVariable("Distortion", "TexDistortion", None)
         self.taaJob.Release()
@@ -923,17 +911,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         elif self.shadowQuality == 0:
             self.shadowMap = None
 
-        if self.postProcessingQuality == 1:
-            self.postProcessingJob.AddPostProcess(evePostProcess.POST_PROCESS_BLOOM_LOW)
-            self.sceneDesaturation.Enable()
-        elif self.postProcessingQuality == 2:
-            self.postProcessingJob.AddPostProcess(evePostProcess.POST_PROCESS_BLOOM_HIGH)
-            self.sceneDesaturation.Enable()
-        else:
-            self.postProcessingJob.RemovePostProcess(evePostProcess.PP_GROUP_BLOOM)
-            self.sceneDesaturation.Disable()
-
-
     def SetSettingsBasedOnPerformancePreferences(self):
         if not self.enabled:
             return
@@ -958,6 +935,35 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._RefreshAntiAliasing()
         self._CreateRenderTargets()
         self._RefreshRenderTargets()
+
+        if self.postProcessingQuality == 0:
+            self.postProcess.Bloom = False
+            self.postProcess.Desaturate = False
+            self.postProcess.DynamicExposure = False
+            self.postProcess.FilmGrain = False
+            self.postProcess.Fog = False
+            self.postProcess.GodRays = False
+            self.postProcess.Lut = False
+            self.postProcess.Tonemapping = False
+        elif self.postProcessingQuality == 1:
+            self.postProcess.Bloom = True
+            self.postProcess.Desaturate = True
+            self.postProcess.DynamicExposure = False
+            self.postProcess.FilmGrain = False
+            self.postProcess.Fog = False
+            self.postProcess.GodRays = False
+            self.postProcess.Lut = False
+            self.postProcess.Tonemapping = True
+        elif self.postProcessingQuality == 2:
+            self.postProcess.Bloom = True
+            self.postProcess.Desaturate = True
+            self.postProcess.DynamicExposure = True
+            self.postProcess.FilmGrain = True
+            self.postProcess.Fog = False
+            self.postProcess.GodRays = True
+            self.postProcess.Lut = False
+            self.postProcess.Tonemapping = True
+
         self.ApplyPerformancePreferencesToScene()
 
 
@@ -984,8 +990,15 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             scene.pixelOffsetScale = 0
             scene.taaSubpixelPattern = 0
 
+        try:
+            if self.postProcess.DynamicExposure:
+                scene.nebulaBrightnessOverride = 0.3
+            else:
+                scene.nebulaBrightnessOverride = 0.0
+        except AttributeError:
+            pass
 
-    def SetMultiViewStage(self, stageKey): 
+    def SetMultiViewStage(self, stageKey):
         self.currentMultiViewStageKey = stageKey
 
 
@@ -1003,28 +1016,11 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.RemoveStep("SET_SWAPCHAIN_RT")
             self.RemoveStep("SET_SWAPCHAIN_DEPTH")
             
-        activePostProcessing = self.usePostProcessing and self.postProcessingJob.liveCount > 0
         if customBackBuffer is not None:
             self.AddStep("SET_CUSTOM_RT", trinity.TriStepPushRenderTarget(customBackBuffer))
             self.AddStep("SET_FINAL_RT", trinity.TriStepPopRenderTarget())
 
-            if self.testPostProcess:
-                self.AddStep("FINAL_BLIT", trinity.TriStepRunJob(self.testPostProcess.renderJob))
-            elif self.msaaEnabled and not activePostProcessing:
-                if self.hdrEnabled:
-                    self.AddStep("FINAL_BLIT", self._DoFormatConversionStep(blitTexture, customBackBuffer))
-                else:
-                    self.AddStep("FINAL_BLIT", trinity.TriStepResolve(self.GetBackBufferRenderTarget(), customBackBuffer))
-            elif self.hdrEnabled and not activePostProcessing and not self.msaaEnabled:
-                self.AddStep("FINAL_BLIT", self._DoFormatConversionStep(customBackBuffer))
-            else:
-                self.RemoveStep("FINAL_BLIT")
-
-            if self.fxaaEnabled:
-                self.AddStep("SET_VAR_GATHER", trinity.TriStepSetVariableStore("GatherMap", customBackBuffer))
-                self.RemoveStep("FINAL_BLIT")
-            else:
-                self.RemoveStep("SET_VAR_GATHER")
+            self.AddStep("FINAL_BLIT", trinity.TriStepRunJob(self.postProcess.renderJob))
         else:
             self.RemoveStep("SET_CUSTOM_RT")
             self.RemoveStep("FINAL_BLIT")
@@ -1055,10 +1051,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.RemoveStep("SET_VAR_DEPTH")
             self.RemoveStep("SET_VAR_DEPTH_MSAA")
 
-        if self.testPostProcess:
-            self.testPostProcess.SetSource(self._GetSourceRTForPostProcessing())
-            self.testPostProcess.SetDest(self._GetDestinationRTForPostProcessing())
-        self._RefreshPostProcessingJob(self.postProcessingJob, self.usePostProcessing and self.prepared)
+        self.postProcess.SetSource(self._GetSourceRTForPostProcessing())
+        self.postProcess.SetDest(self._GetDestinationRTForPostProcessing())
         self._RefreshPostProcessingJob(self.distortionJob, self.distortionEffectsEnabled and self.prepared)
         self._RefreshPostProcessingJob(self.backgroundDistortionJob, self.distortionEffectsEnabled and self.prepared)
         self._RefreshPostProcessingJob(self.taaJob, self.taaEnabled and self.prepared)
@@ -1099,63 +1093,3 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             
     def EnableVisibilityQuery( self, isEnabled ):
         pass
-
-
-class ScenePostProcessWrapper(object):
-    attrName = "None"
-    ppType = None
-    initial_value = 1.0
-
-    def __init__(self, ppJob):
-        self.ppJob = ppJob
-        self._value = self.initial_value
-
-    @property
-    def value(self):
-        return self._value
-
-    @value.setter
-    def value(self, value):
-        self._value = value
-        self.ppJob.SetPostProcessVariable(self.ppType, self.attrName, value)
-
-    def Disable(self):
-        self.ppJob.RemovePostProcess(self.ppType)
-
-    def Enable(self):
-        self.ppJob.AddPostProcess(self.ppType)
-
-
-class SceneDesaturation(ScenePostProcessWrapper):
-    attrName = "SaturationFactor"
-    ppType = evePostProcess.POST_PROCESS_DESATURATE
-
-
-class SceneFadeOut(ScenePostProcessWrapper):
-    attrName = "Color"
-    ppType = evePostProcess.POST_PROCESS_FADE_OUT
-    initial_value = 0.0, 0.0, 0.0, 0.0
-
-    def __init__(self, ppJob):
-        ScenePostProcessWrapper.__init__(self, ppJob)
-        self._value = self.initial_value
-
-    @property
-    def color(self):
-        return self._value[:3]
-
-    @color.setter
-    def color(self, c):
-        self.value = c + (self._value[3], )
-
-    @property
-    def opacity(self):
-        return self._value[3]
-
-    @opacity.setter
-    def opacity(self, c):
-        self.value = self._value[:3] + (c, )
-
-
-
-

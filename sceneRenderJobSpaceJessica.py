@@ -36,7 +36,6 @@ class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
         }
         self.backBufferOverride = None
         self.depthBufferOverride = None
-        self.sceneFadeOut.Disable()
 
     def SetSettings(self, rjSettings):
         self.settings = rjSettings
@@ -80,11 +79,6 @@ class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
         else:
             self.EnableMSAA(self.antiAliasingEnabled)
 
-    def GetPostProcesses(self):
-        if self.postProcessingJob is not None:
-            return self.postProcessingJob.GetPostProcesses()
-        return []
-
     def _GetSettings(self):
         """ See SceneRenderJobSpace._GetSettings """
         return self.settings
@@ -109,8 +103,6 @@ class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
             self.shadowMap = None
         else:
             self.shadowMap.size = self.settings["shadowMapSize"]
-
-        self.usePostProcessing = self.postProcessingJob.liveCount > 0
 
     def SetRenderTargets(self, *args):
         SceneRenderJobSpace.SetRenderTargets(self, *args)
