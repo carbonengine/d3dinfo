@@ -293,8 +293,36 @@ class GpuBufferParameter(Parameter):
         super(GpuBufferParameter, self).__init__(name, data)
         if self._type != 'gpubuffer':
             raise RuntimeError()
-        reader = blue.DictReader()
-        self.buffer = reader.CreateObject(data['buffer'])
+        self.buffer = None
+        self._data = data
+        self._count = self._data['count']
+        self._pixel_format = self._data['format']
+        self._flags = self._data['creationFlags']
+        self._dependencies = []
+
+        if isinstance(self._count, basestring):
+            self._dependencies += _GetConditionDependencies(self._count)
+        if isinstance(self._pixel_format, basestring):
+            self._dependencies += _GetConditionDependencies(self._pixel_format)
+        if isinstance(self._flags, basestring):
+            self._dependencies += _GetConditionDependencies(self._flags)
+
+    def UpdateValue(self, parameters):
+        if isinstance(self._count, basestring):
+            count = _EvaluateString(self._count, parameters)
+        else:
+            count = self._count
+        if isinstance(self._pixel_format, basestring):
+            pixel_format = _EvaluateString(self._pixel_format, parameters)
+        else:
+            pixel_format = self._pixel_format
+        if isinstance(self._flags, basestring):
+            flags = _EvaluateString(self._flags, parameters)
+        else:
+            flags = self._flags
+        if not self.buffer or not self.buffer.isValid or self.buffer.count != count or self.buffer.format != pixel_format or self.buffer.creationFlags != flags:
+            self.buffer = trinity.Tr2GpuBuffer(count, pixel_format, flags)
+        super(GpuBufferParameter, self).UpdateValue(parameters)
 
     def GetValue(self):
         return self.buffer
@@ -313,6 +341,9 @@ class GpuBufferParameter(Parameter):
 
     def _ApplyToEffect(self, obj, name):
         obj.gpuBuffer = self.buffer
+
+    def GetDependencies(self):
+        return self._dependencies
 
 
 class BuiltinRenderTargetParameter(Parameter):
@@ -649,10 +680,14 @@ steps:
     def _ExpandChangedParams(self, changedParams=None):
         if changedParams is None:
             changedParams = self._parameters.keys()
-        cp = set(changedParams)
-        for each in changedParams:
-            cp = cp.union({k for k, v in self._dependencies.iteritems() if each in v})
-        return cp
+        old = set(changedParams)
+        while True:
+            cp = set(old)
+            for each in cp:
+                cp = cp.union({k for k, v in self._dependencies.iteritems() if each in v})
+            if cp == old:
+                return cp
+            old = cp
 
     def _UpdateParameters(self, changedParams=None):
         changedParams = self._ExpandChangedParams(changedParams)
