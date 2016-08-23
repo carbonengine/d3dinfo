@@ -321,7 +321,10 @@ class GpuBufferParameter(Parameter):
         else:
             flags = self._flags
         if not self.buffer or not self.buffer.isValid or self.buffer.count != count or self.buffer.format != pixel_format or self.buffer.creationFlags != flags:
-            self.buffer = trinity.Tr2GpuBuffer(count, pixel_format, flags)
+            try:
+                self.buffer = trinity.Tr2GpuBuffer(count, pixel_format, flags)
+            except trinity.ALError:
+                self.buffer = trinity.Tr2GpuBuffer()
         super(GpuBufferParameter, self).UpdateValue(parameters)
 
     def GetValue(self):

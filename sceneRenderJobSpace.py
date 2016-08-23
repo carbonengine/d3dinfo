@@ -990,13 +990,14 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             scene.pixelOffsetScale = 0
             scene.taaSubpixelPattern = 0
 
-        try:
-            if self.postProcess.DynamicExposure:
-                scene.nebulaBrightnessOverride = 0.3
-            else:
-                scene.nebulaBrightnessOverride = 0.0
-        except AttributeError:
-            pass
+        if self.enabled:
+            try:
+                if self.postProcess.DynamicExposure:
+                    scene.nebulaBrightnessOverride = 0.3
+                else:
+                    scene.nebulaBrightnessOverride = 0.0
+            except AttributeError:
+                pass
 
     def SetMultiViewStage(self, stageKey):
         self.currentMultiViewStageKey = stageKey
