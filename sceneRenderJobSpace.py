@@ -979,7 +979,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         if self.enabled:
             try:
                 if self.postProcess.DynamicExposure:
-                    scene.nebulaBrightnessOverride = 0.3
+                    scene.nebulaBrightnessOverride = 0.15
                 else:
                     scene.nebulaBrightnessOverride = 0.0
             except AttributeError:
