@@ -936,7 +936,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.postProcess.Desaturate = True
             self.postProcess.DynamicExposure = False
             self.postProcess.FilmGrain = False
-            self.postProcess.Tonemapping = True
+            self.postProcess.Tonemapping = False
             self.postProcess.FogEnabled = False
             self.postProcess.Lut = True
             self.postProcess.GodRays = False
@@ -945,7 +945,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.postProcess.Desaturate = True
             self.postProcess.DynamicExposure = _singletons.platform == 'dx11'
             self.postProcess.FilmGrain = True
-            self.postProcess.Tonemapping = True
+            self.postProcess.Tonemapping = False
             self.postProcess.FogEnabled = True
             self.postProcess.Lut = True
             self.postProcess.GodRays = True
