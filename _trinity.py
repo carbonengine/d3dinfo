@@ -84,6 +84,8 @@ def _ImportDll():
             _logger.warn("Invalid Trinity platform %s" % triPlatform)
             triPlatform = validPlatforms[0]
             _logger.info("Using Trinity platform %s instead" % triPlatform)
+    else:
+        _logger.info("Skipping platform check")
 
     dllName = "_trinity_%s_%s" % (triPlatform, triType)
     print "Starting up Trinity through %s ..." % dllName
