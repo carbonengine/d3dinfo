@@ -93,6 +93,11 @@ class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
         self.msaaType = self.GetMSAATypeFromQuality(self.aaQuality)
         
         self.fxaaQuality = self._GetFXAAQuality(self.aaQuality)
+        self.taaEnabled = self.aaQuality > 1
+        if self.taaEnabled and self.prepared:
+            self.taaJob.AddPostProcess("TAA", self.taaPath)
+        else:
+            self.taaJob.RemovePostProcess("TAA")
 
         self.shadowQuality = self.settings["shadowQuality"]
         if self.shadowQuality > 0 and self.shadowMap is None:
