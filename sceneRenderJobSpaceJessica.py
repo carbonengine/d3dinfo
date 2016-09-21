@@ -32,6 +32,7 @@ class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
             "postProcessingQuality": 2,
             "shadowQuality": 2,
             "shadowMapSize": 1024,
+            "taa": False
         }
         self.backBufferOverride = None
         self.depthBufferOverride = None
@@ -93,7 +94,7 @@ class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
         self.msaaType = self.GetMSAATypeFromQuality(self.aaQuality)
         
         self.fxaaQuality = self._GetFXAAQuality(self.aaQuality)
-        self.taaEnabled = self.aaQuality > 1
+        self.taaEnabled = self.settings.get("taa", False)
         if self.taaEnabled and self.prepared:
             self.taaJob.AddPostProcess("TAA", self.taaPath)
         else:
