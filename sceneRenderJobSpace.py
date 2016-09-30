@@ -159,6 +159,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         self.gpuParticlesEnabled = True
 
+        self.useImpostors = True
+
 
     def Enable(self, schedule=True):
         SceneRenderJobBase.Enable(self, schedule)
@@ -958,6 +960,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         scene = self.GetScene()
         if scene is None:
             return
+        if self.useImpostors:
+            scene.impostorManager = trinity.Tr2ImpostorManager()
         if self.gpuParticlesEnabled:
             if not scene.gpuParticleSystem:
                 scene.gpuParticleSystem = blue.resMan.LoadObject('res:/fisfx/gpuparticles/system.red')
