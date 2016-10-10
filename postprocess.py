@@ -579,6 +579,8 @@ class PostProcess(object):
         """
         params = yamlext.load(blue.paths.GetFileContentsWithYield(path))
         for name, value in params.iteritems():
+            if name.startswith('_'):
+                continue
             self._parameters[name].SetValue(value)
         self._UpdateParameters()
 
@@ -591,6 +593,8 @@ class PostProcess(object):
         """
         params = {}
         for name, param in self._parameters.iteritems():
+            if name.startswith('_'):
+                continue
             value = param.GetValue()
             if isinstance(value, (int, long, float, tuple, bool)):
                 params[name] = value
