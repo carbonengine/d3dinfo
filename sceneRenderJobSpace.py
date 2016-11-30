@@ -138,7 +138,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.fxaaEffect = None
         self.taaEnabled = False
         self.taaPixelOffset = 0.5
-        self.taaPattern = 4
+        self.taaPattern = 3
         
         self.bbFormat = _singletons.device.GetRenderContext().GetBackBufferFormat()
 
@@ -223,6 +223,12 @@ class SceneRenderJobSpace(SceneRenderJobBase):
     def SetCameraProjection(self, proj):
         super(SceneRenderJobSpace, self).SetCameraProjection(proj)
         self._SetUpdateStep(trinity.TriStepSetProjection(proj), "SET_PROJECTION")
+
+    def SetCameraCallback(self, cb):
+        if self.updateJob is not None:
+            self._SetUpdateStep(trinity.TriStepPythonCB(cb), "CAMERA_UPDATE")
+        else:
+            self.AddStep("CAMERA_UPDATE", trinity.TriStepPythonCB(cb))
 
     def SetActiveCamera(self, camera=None, view=None, projection=None):
         """
@@ -459,6 +465,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         step.name = name
 
     def _CreateUpdateSteps(self):
+        self._CreateUpdateStep(trinity.TriStepPythonCB(), "CAMERA_UPDATE")
         self._CreateUpdateStep(trinity.TriStepSetView(), "SET_VIEW")
         self._CreateUpdateStep(trinity.TriStepSetProjection(), "SET_PROJECTION")
         self._CreateUpdateStep(trinity.TriStepUpdate(self.GetScene()), "UPDATE_SCENE")
