@@ -12,6 +12,14 @@ import sys as _sys
 
 import blue as _blue
 
+
+# This is a hack to allow PyCharm to parse stub files for trinity. The _trinity_dx11_internal_stub stub is located
+# in packages/stubgen/stubs and will always generate an ImportError.
+try:
+    from _trinity_dx11_internal_stub import *
+except ImportError:
+    pass
+
 _logger = _logging.getLogger('trinity')
 
 from . import availablePlatforms, _utils
