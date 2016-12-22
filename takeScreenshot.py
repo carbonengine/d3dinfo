@@ -360,17 +360,17 @@ def TakeScreenshot(filename, tilesAcross, saverClass = HostBitmapSaver):
         screenShot = saverClass(filename, tileWidth*tilesAcross, tileHeight*tilesAcross, backBuffer.format)
         
         info = wx.BusyInfo( "Hold on, generating snazzy snapshot ..." )
-        tileOffset = trinity.TriPoint()
+        tileOffset = [0, 0]
         halfAcross = tilesAcross/2.0
         for y in range(tilesAcross - 1, -1, -1):
             top = (halfAcross - y)*heightSlice
             bottom = top - heightSlice
-            tileOffset.y = y*tileHeight
+            tileOffset[1] = y * tileHeight
             screenShot.StartBatch(tileHeight)
             for x in range(tilesAcross):
                 left = (x - halfAcross)*widthSlice
                 right = left + widthSlice
-                tileOffset.x = x*tileWidth
+                tileOffset[0] = x * tileWidth
                 
                 # We draw each 'tile' in four chunks, each the size of the whole tile but we throw away everything except the middle part
                 # for each chunk. This is done so we can use post processing effects.
@@ -391,7 +391,7 @@ def TakeScreenshot(filename, tilesAcross, saverClass = HostBitmapSaver):
                         
                         # Override projections and viewports
                         OverrideAllProjectionsAndViewports(sceneRenderJobs, newProj, newViewport)
-                        OverrideInteriorFlareViewports(flarePreviousState, int(x_off[1] + tileOffset.x), int(y_off[1] + tileOffset.y), tileWidth*tilesAcross, tileHeight*tilesAcross)
+                        OverrideInteriorFlareViewports(flarePreviousState, int(x_off[1] + tileOffset[0]), int(y_off[1] + tileOffset[1]), tileWidth * tilesAcross, tileHeight * tilesAcross)
                         
                         dev.Render()
                         # renderjobs run after the scene render in jessica, which means that lightmap updates etc. are
@@ -399,14 +399,14 @@ def TakeScreenshot(filename, tilesAcross, saverClass = HostBitmapSaver):
                         dev.Render()
                 
                         # calculate offset and sub rect to copy
-                        offset = trinity.TriPoint(int(x_off[1] + tileOffset.x), int(y_off[1] + tileOffset.y))
+                        offset = [int(x_off[1] + tileOffset[0]), int(y_off[1] + tileOffset[1])]
                         rect = trinity.TriRect(int(twd4), int(thd4), int(3*twd4 + x_off[2]), int(3*thd4 + y_off[2]))
 
                         if not backBuffer.isReadable:
                             backBuffer.Resolve(tempRT)
-                            screenShot.CopyFromRenderTargetRegion(tempRT, rect.left, rect.top, rect.right, rect.bottom, offset.x, offset.y)
+                            screenShot.CopyFromRenderTargetRegion(tempRT, rect.left, rect.top, rect.right, rect.bottom, offset[0], offset[1])
                         else:
-                            screenShot.CopyFromRenderTargetRegion(backBuffer, rect.left, rect.top, rect.right, rect.bottom, offset.x, offset.y)
+                            screenShot.CopyFromRenderTargetRegion(backBuffer, rect.left, rect.top, rect.right, rect.bottom, offset[0], offset[1])
 
             # Restore projections and viewports
             RestoreAllProjectionsAndViewports()
