@@ -12,7 +12,7 @@ def GetPublicParameters(effect):
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
     params, resources, _ = effectinfo.get_merged_parameters(path)
-    return {name: param for name, param in params.items() if param.get_annotation('SasUiVisible', False)}
+    return {name: param for name, param in params.items() if param.annotation.get('SasUiVisible', False)}
 
 
 def GetPublicResources(effect):
@@ -24,7 +24,7 @@ def GetPublicResources(effect):
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
     params, resources, _ = effectinfo.get_merged_parameters(path)
-    return {name: param for name, param in resources.items() if param.get_annotation('SasUiVisible', False)}
+    return {name: param for name, param in resources.items() if param.annotation.get('SasUiVisible', False)}
 
 
 def GetSamplers(effect):
@@ -58,7 +58,7 @@ def PopulateParameters(effect):
     for name, param in params.items():
         if name in existing:
             continue
-        if not param.get_annotation('SasUiVisible', False):
+        if not param.annotation.get('SasUiVisible', False):
             continue
         new = getattr(trinity, param.trinity_type)()
         new.name = name
@@ -82,7 +82,7 @@ def PruneParameters(effect):
     path = blue.paths.ResolvePath(effect.effectFilePath)
     params, resources, _ = effectinfo.get_merged_parameters(path)
     params.update(resources)
-    params = set([name for name, param in params if param.get_annotation('SasUiVisible', False)])
+    params = set([name for name, param in params if param.annotation.get('SasUiVisible', False)])
     delete = []
     for i, param in enumerate(effect.constParameters):
         if param[0] not in params:
@@ -210,3 +210,84 @@ def ParameterToConst(effect, name):
         v = p.value, 0.0, 0.0, 0.0
     effect.constParameters.append((name, v))
     effect.parameters.remove(p)
+
+
+class _VectorWrapper(object):
+    def __init__(self, value):
+        self._value = value
+
+    def __getitem__(self, item):
+        return self._value[item]
+
+    def __getattr__(self, item):
+        result = []
+        for each in item:
+            if each in ('r', 'x'):
+                result.append(self._value[0])
+            elif each in ('g', 'y'):
+                result.append(self._value[1])
+            elif each in ('b', 'z'):
+                result.append(self._value[2])
+            elif each in ('a', 'w'):
+                result.append(self._value[3])
+            else:
+                raise AttributeError(item)
+        return tuple(result)
+
+
+class _MatrixWrapper(object):
+    def __init__(self, value):
+        self._value = value
+
+    def __getitem__(self, item):
+        return self._value[item]
+
+    def __getattr__(self, item):
+        if len(item) == 3 and item[0] == '_' and item[1] in '1234' and item[3] in '1234':
+            row = ord(item[1]) - ord('1')
+            col = ord(item[2]) - ord('1')
+            return self._value[row][col]
+        raise AttributeError(item)
+
+
+def _WrapParameterValue(value, param):
+    if param.constant.elements > 1:
+        return []
+    elif param.constant.dimension == 16:
+        return _MatrixWrapper(value)
+    elif param.constant.dimension == 1:
+        if isinstance(value, tuple):
+            return value[0]
+        return value
+    else:
+        return _VectorWrapper(value)
+
+
+def ValidateParameterValue(effect, name, value):
+    """
+    Moves the parameter with the specified name from parameters to constParameters list.
+
+    :param effect: effect object
+    :type effect: trinity.Tr2Effect
+    :param name: parameter name
+    :type name: str
+    :raises ValueError: if parameter with the specified name is not in the compiled effect
+    :raises AssertionError: if validation fails
+    """
+    path = blue.paths.ResolvePath(effect.effectFilePath)
+    params, resources, _ = effectinfo.get_merged_parameters(path)
+    if name not in params:
+        raise ValueError('parameter %s not found in the effect resource' % name)
+    validation = params[name].annotation.get('Validation', '')
+    if not validation:
+        return
+    p = {}
+    for n, v in effect.constParameters:
+        if n in params:
+            p[n] = _WrapParameterValue(v, params[n])
+    for each in effect.parameters:
+        if each.name in params:
+            p[each.name] = _WrapParameterValue(each.value, params[each.name])
+    p['self'] = _WrapParameterValue(value, params[name])
+    if not eval(validation, {}, p):
+        raise AssertionError(params[name].annotation.get('ValidationMessage', 'invalid value'))
