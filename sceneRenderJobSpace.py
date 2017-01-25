@@ -938,6 +938,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.postProcess.FogEnabled = False
             self.postProcess.Lut = False
             self.postProcess.GodRays = False
+            self.postProcess.DynamicExposure = False
+            self.postProcess.Tonemapping = False
         elif self.postProcessingQuality == 1:
             self.postProcess.Bloom = True
             self.postProcess.Desaturate = True
@@ -945,6 +947,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.postProcess.FogEnabled = False
             self.postProcess.Lut = True
             self.postProcess.GodRays = False
+            self.postProcess.DynamicExposure = False
+            self.postProcess.Tonemapping = False
         elif self.postProcessingQuality == 2:
             self.postProcess.Bloom = True
             self.postProcess.Desaturate = True
@@ -952,6 +956,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.postProcess.FogEnabled = True
             self.postProcess.Lut = True
             self.postProcess.GodRays = True
+            self.postProcess.DynamicExposure = _singletons.platform == 'dx11'
+            self.postProcess.Tonemapping = _singletons.platform == 'dx11'
 
         self.ApplyPerformancePreferencesToScene()
 
@@ -980,6 +986,10 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         else:
             scene.pixelOffsetScale = 0
             scene.taaSubpixelPattern = 0
+        if _singletons.platform == 'dx11' and self.postProcessingQuality == 2:
+            scene.nebulaBrightnessOverride = 0.3
+        else:
+            scene.nebulaBrightnessOverride = 0.0
 
     def SetMultiViewStage(self, stageKey):
         self.currentMultiViewStageKey = stageKey
