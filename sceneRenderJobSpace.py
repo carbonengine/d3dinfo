@@ -139,7 +139,9 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.taaEnabled = False
         self.taaPixelOffset = 0.5
         self.taaPattern = 3
-        
+
+        self.postProcessingQuality = 0
+
         self.bbFormat = _singletons.device.GetRenderContext().GetBackBufferFormat()
 
         self.prepared = False
