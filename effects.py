@@ -3,6 +3,19 @@ import trinity
 from shadercompiler import effectinfo
 
 
+_cache = {}
+
+
+def _GetMergedParameters(resPath):
+    resPath = resPath.lower().replace('\\', '/')
+    if resPath in _cache:
+        return _cache[resPath]
+    path = blue.paths.ResolvePath(resPath)
+    result = effectinfo.get_merged_parameters(path)
+    _cache[resPath] = result
+    return result
+
+
 def GetPublicParameters(effect):
     """
     Returns all public parameters (those that have 'SasUiVisible' annotation) for compiled effect
@@ -11,7 +24,7 @@ def GetPublicParameters(effect):
     :rtype: dict[str, shadercompiler.effectinfo._Parameter]
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = effectinfo.get_merged_parameters(path)
+    params, resources, _ = _GetMergedParameters(path)
     return {name: param for name, param in params.items() if param.annotation.get('SasUiVisible', False)}
 
 
@@ -23,7 +36,7 @@ def GetPublicResources(effect):
     :rtype: dict[str, shadercompiler.effectinfo._Parameter]
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = effectinfo.get_merged_parameters(path)
+    params, resources, _ = _GetMergedParameters(path)
     return {name: param for name, param in resources.items() if param.annotation.get('SasUiVisible', False)}
 
 
@@ -36,7 +49,7 @@ def GetSamplers(effect):
     :rtype: dict[str, shadercompiler.effectinfo.Sampler]
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    return effectinfo.get_merged_parameters(path)[2]
+    return _GetMergedParameters(path)[2]
 
 
 def PopulateParameters(effect):
@@ -47,7 +60,7 @@ def PopulateParameters(effect):
     :type effect: trinity.Tr2Effect
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = effectinfo.get_merged_parameters(path)
+    params, resources, _ = _GetMergedParameters(path)
     existing = set()
     for name, _ in effect.constParameters:
         existing.add(name)
@@ -80,7 +93,7 @@ def PruneParameters(effect):
     :type effect: trinity.Tr2Effect
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = effectinfo.get_merged_parameters(path)
+    params, resources, _ = _GetMergedParameters(path)
     params.update(resources)
     params = set([name for name, param in params.items() if param.annotation.get('SasUiVisible', False)])
     delete = []
@@ -112,7 +125,7 @@ def GetUnusedParameters(effect):
     :rtype: list[str]
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = effectinfo.get_merged_parameters(path)
+    params, resources, _ = _GetMergedParameters(path)
     params.update(resources)
     result = []
     for name, _ in effect.constParameters:
@@ -136,7 +149,7 @@ def GetMissingParameters(effect):
     :rtype: list[str]
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = effectinfo.get_merged_parameters(path)
+    params, resources, _ = _GetMergedParameters(path)
     params.update(resources)
     existing = {name for name, _ in effect.constParameters}
     existing.update((p.name for p in effect.parameters))
@@ -155,7 +168,7 @@ def IsParameterUsed(effect, name):
     :rtype: bool
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = effectinfo.get_merged_parameters(path)
+    params, resources, _ = _GetMergedParameters(path)
     return name in params or name in resources
 
 
@@ -170,7 +183,7 @@ def ConstToParameter(effect, name):
     :raises ValueError: if the parameter name is invalid
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = effectinfo.get_merged_parameters(path)
+    params, resources, _ = _GetMergedParameters(path)
     if name not in params:
         raise ValueError('parameter \"%s\" is not used by the effect' % name)
     for i, p in enumerate(effect.constParameters):
@@ -275,7 +288,7 @@ def ValidateParameterValue(effect, name, value):
     :raises AssertionError: if validation fails
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = effectinfo.get_merged_parameters(path)
+    params, resources, _ = _GetMergedParameters(path)
     if name not in params:
         raise ValueError('parameter %s not found in the effect resource' % name)
     validation = params[name].annotation.get('Validation', '')
