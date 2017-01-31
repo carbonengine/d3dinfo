@@ -3,64 +3,70 @@ import trinity
 from shadercompiler import effectinfo
 
 
-_cache = {}
-
-
-def _GetMergedParameters(resPath):
+def _GetMergedParameters(resPath, cache):
     resPath = resPath.lower().replace('\\', '/')
-    if resPath in _cache:
-        return _cache[resPath]
+    if cache and resPath in cache:
+        return cache[resPath]
     path = blue.paths.ResolvePath(resPath)
     result = effectinfo.get_merged_parameters(path)
-    _cache[resPath] = result
-    return result
+    if cache is not None:
+        cache[resPath] = result
+    return dict(result[0]), dict(result[1]), dict(result[2])
 
 
-def GetPublicParameters(effect):
+def GetPublicParameters(effect, cache=None):
     """
     Returns all public parameters (those that have 'SasUiVisible' annotation) for compiled effect
     :param effect: effect object
     :type effect: trinity.Tr2Effect
+    :param cache: optional cache dictionary to avoid re-parsing files
+    :type cache: dict
     :rtype: dict[str, shadercompiler.effectinfo._Parameter]
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path)
+    params, resources, _ = _GetMergedParameters(path, cache)
     return {name: param for name, param in params.items() if param.annotation.get('SasUiVisible', False)}
 
 
-def GetPublicResources(effect):
+def GetPublicResources(effect, cache=None):
     """
     Returns all public resources (those that have 'SasUiVisible' annotation) for compiled effect
     :param effect: effect object
     :type effect: trinity.Tr2Effect
+    :param cache: optional cache dictionary to avoid re-parsing files
+    :type cache: dict
     :rtype: dict[str, shadercompiler.effectinfo._Parameter]
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path)
+    params, resources, _ = _GetMergedParameters(path, cache)
     return {name: param for name, param in resources.items() if param.annotation.get('SasUiVisible', False)}
 
 
-def GetSamplers(effect):
+def GetSamplers(effect, cache=None):
     """
     Returns all samplers for compiled effect
 
     :param effect: effect object
     :type effect: trinity.Tr2Effect
+    :param cache: optional cache dictionary to avoid re-parsing files
+    :type cache: dict
     :rtype: dict[str, shadercompiler.effectinfo.Sampler]
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    return _GetMergedParameters(path)[2]
+    return _GetMergedParameters(path, cache)[2]
 
 
-def PopulateParameters(effect):
+def PopulateParameters(effect, cache=None):
     """
     Populate missing parameters for the effect
 
     :param effect: effect object
     :type effect: trinity.Tr2Effect
+    :param cache: optional cache dictionary to avoid re-parsing files
+    :type cache: dict
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path)
+    params, resources, _ = _GetMergedParameters(path, cache)
     existing = set()
     for name, _ in effect.constParameters:
         existing.add(name)
@@ -85,15 +91,17 @@ def PopulateParameters(effect):
         effect.resources.append(new)
 
 
-def PruneParameters(effect):
+def PruneParameters(effect, cache=None):
     """
     Removes unused parameters from the effect
 
     :param effect: effect object
     :type effect: trinity.Tr2Effect
+    :param cache: optional cache dictionary to avoid re-parsing files
+    :type cache: dict
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path)
+    params, resources, _ = _GetMergedParameters(path, cache)
     params.update(resources)
     params = set([name for name, param in params.items() if param.annotation.get('SasUiVisible', False)])
     delete = []
@@ -116,16 +124,18 @@ def PruneParameters(effect):
         del effect.resources[idx]
 
 
-def GetUnusedParameters(effect):
+def GetUnusedParameters(effect, cache=None):
     """
     Returns a list of parameter names that are not used by the effect
 
     :param effect: effect object
     :type effect: trinity.Tr2Effect
+    :param cache: optional cache dictionary to avoid re-parsing files
+    :type cache: dict
     :rtype: list[str]
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path)
+    params, resources, _ = _GetMergedParameters(path, cache)
     params.update(resources)
     result = []
     for name, _ in effect.constParameters:
@@ -140,16 +150,18 @@ def GetUnusedParameters(effect):
     return result
 
 
-def GetMissingParameters(effect):
+def GetMissingParameters(effect, cache=None):
     """
     Returns a list of parameter names that are missing from the effect
 
     :param effect: effect object
     :type effect: trinity.Tr2Effect
+    :param cache: optional cache dictionary to avoid re-parsing files
+    :type cache: dict
     :rtype: list[str]
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path)
+    params, resources, _ = _GetMergedParameters(path, cache)
     params.update(resources)
     existing = {name for name, _ in effect.constParameters}
     existing.update((p.name for p in effect.parameters))
@@ -157,7 +169,7 @@ def GetMissingParameters(effect):
     return list(set(params.keys()).difference(existing))
 
 
-def IsParameterUsed(effect, name):
+def IsParameterUsed(effect, name, cache=None):
     """
     Checks if the given parameter name is used by any permutation of the effect
 
@@ -165,14 +177,16 @@ def IsParameterUsed(effect, name):
     :type effect: trinity.Tr2Effect
     :param name: parameter name
     :type name: str
+    :param cache: optional cache dictionary to avoid re-parsing files
+    :type cache: dict
     :rtype: bool
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path)
+    params, resources, _ = _GetMergedParameters(path, cache)
     return name in params or name in resources
 
 
-def ConstToParameter(effect, name):
+def ConstToParameter(effect, name, cache=None):
     """
     Moves the parameter with the specified name from constParameters to parameters list.
 
@@ -180,10 +194,12 @@ def ConstToParameter(effect, name):
     :type effect: trinity.Tr2Effect
     :param name: parameter name
     :type name: str
+    :param cache: optional cache dictionary to avoid re-parsing files
+    :type cache: dict
     :raises ValueError: if the parameter name is invalid
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path)
+    params, resources, _ = _GetMergedParameters(path, cache)
     if name not in params:
         raise ValueError('parameter \"%s\" is not used by the effect' % name)
     for i, p in enumerate(effect.constParameters):
@@ -276,7 +292,7 @@ def _WrapParameterValue(value, param):
         return _VectorWrapper(value)
 
 
-def ValidateParameterValue(effect, name, value):
+def ValidateParameterValue(effect, name, value, cache=None):
     """
     Moves the parameter with the specified name from parameters to constParameters list.
 
@@ -284,11 +300,13 @@ def ValidateParameterValue(effect, name, value):
     :type effect: trinity.Tr2Effect
     :param name: parameter name
     :type name: str
+    :param cache: optional cache dictionary to avoid re-parsing files
+    :type cache: dict
     :raises ValueError: if parameter with the specified name is not in the compiled effect
     :raises AssertionError: if validation fails
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path)
+    params, resources, _ = _GetMergedParameters(path, cache)
     if name not in params:
         raise ValueError('parameter %s not found in the effect resource' % name)
     validation = params[name].annotation.get('Validation', '')
