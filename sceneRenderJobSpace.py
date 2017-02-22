@@ -599,7 +599,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         """
         currentSettings = {}
 
-        currentSettings["postProcessingQuality"] = gfxsettings.Get(gfxsettings.GFX_POST_PROCESSING_QUALITY)
+        currentSettings["postProcessingQuality"] = self.overrideSettings.get(gfxsettings.GFX_POST_PROCESSING_QUALITY,
+                                                                             gfxsettings.Get(gfxsettings.GFX_POST_PROCESSING_QUALITY))
         currentSettings["shadowQuality"] = gfxsettings.Get(gfxsettings.GFX_SHADOW_QUALITY)
         currentSettings["aaQuality"] = gfxsettings.Get(gfxsettings.GFX_ANTI_ALIASING)
         try:
@@ -636,6 +637,13 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
     def OverrideSettings(self, key, value):
         self.overrideSettings[key] = value
+
+
+    def StopOverrideSettings(self, key):
+        try:
+            del self.overrideSettings[key]
+        except KeyError:
+            pass
 
 
     def _CreateRenderTargets(self):
