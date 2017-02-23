@@ -563,6 +563,7 @@ class PostProcess(object):
             '__sourcert__': BuiltinRenderTargetParameter('__sourcert__', self.source),
             '__destrt__': BuiltinRenderTargetParameter('__destrt__', self.dest)})
         super(PostProcess, self).__setattr__('_dependencies', {})
+        super(PostProcess, self).__setattr__('_dependenciesSorted', [])
         super(PostProcess, self).__setattr__('_stepDependencies', [])
         super(PostProcess, self).__setattr__('_builtInParameters', self._parameters.keys())
         super(PostProcess, self).__setattr__('__members__', [])
@@ -698,7 +699,7 @@ steps:
 
     def _UpdateParameters(self, changedParams=None):
         changedParams = self._ExpandChangedParams(changedParams)
-        for p in TopoSort(self._dependencies):
+        for p in self._dependenciesSorted:
             if p in changedParams:
                 self._parameters[p].UpdateValue(self._parameters)
 
@@ -751,6 +752,8 @@ steps:
             self._AddVariable(key, value)
         self.__members__.sort()
 
+        del self._dependenciesSorted[:]
+        self._dependenciesSorted.extend(TopoSort(self._dependencies))
         self._UpdateParameters()
 
         tempVars = self._CreateTempVariables(data)
@@ -802,6 +805,9 @@ steps:
                                                each['condition'], steps))
             else:
                 self._stepDependencies.append((usedParameters, None, steps))
+
+        del self._dependenciesSorted[:]
+        self._dependenciesSorted.extend(TopoSort(self._dependencies))
 
         self._UpdateParameters()
 
