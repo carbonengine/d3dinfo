@@ -8,7 +8,10 @@ def _GetMergedParameters(resPath, cache):
     if cache and resPath in cache:
         return cache[resPath]
     path = blue.paths.ResolvePath(resPath)
-    result = effectinfo.get_merged_parameters(path)
+    try:
+        result = effectinfo.get_merged_parameters(path)
+    except IOError:
+        result = {}, {}, {}
     if cache is not None:
         cache[resPath] = result
     return dict(result[0]), dict(result[1]), dict(result[2])
