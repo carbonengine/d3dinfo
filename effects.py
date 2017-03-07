@@ -6,7 +6,7 @@ from shadercompiler import effectinfo
 def _GetMergedParameters(resPath, cache):
     resPath = resPath.lower().replace('\\', '/')
     if cache and resPath in cache:
-        return cache[resPath]
+        return dict(cache[resPath][0]), dict(cache[resPath][1]), dict(cache[resPath][2])
     path = blue.paths.ResolvePath(resPath)
     try:
         result = effectinfo.get_merged_parameters(path)
@@ -91,6 +91,7 @@ def PopulateParameters(effect, cache=None):
         if name in existing:
             continue
         new = getattr(trinity, param.trinity_type)()
+        new.name = name
         effect.resources.append(new)
 
 
