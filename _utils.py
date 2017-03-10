@@ -15,7 +15,7 @@ def Quit(msg):
 def AssertNotOnProxyOrServer():
     try:
         cmdlineargs = blue.pyos.GetArg()
-        if boot.role in ("server", "proxy") and "/jessica" not in cmdlineargs and "/minime" not in cmdlineargs:
+        if bot is not None and boot.role in ("server", "proxy") and "/jessica" not in cmdlineargs and "/minime" not in cmdlineargs:
             raise RuntimeError("Don't import trinity on the proxy or server")
     except NameError:
         pass
