@@ -1,5 +1,7 @@
 import sys
 import blue
+from eveprefs import boot
+
 
 def Quit(msg):
     try:
