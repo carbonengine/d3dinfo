@@ -653,6 +653,17 @@ class PostProcess(object):
 
         self.Clear()
 
+    def SetParameters(self, params):
+        """
+        Configures the post processing parameters from the supplied dictionary.
+        :param params: a dictionary of parameters from which to configure.
+        """
+        for name, value in params.iteritems():
+            if name.startswith('_'):
+                continue
+            self._parameters[name].SetValue(value)
+        self._UpdateParameters()
+
     def LoadParameters(self, path):
         """
         Loads a YAML file with parameter values
@@ -661,18 +672,13 @@ class PostProcess(object):
         :jessica-favorite:
         """
         params = yamlext.load(blue.paths.GetFileContentsWithYield(path))
-        for name, value in params.iteritems():
-            if name.startswith('_'):
-                continue
-            self._parameters[name].SetValue(value)
-        self._UpdateParameters()
+        self.SetParameters(params)
 
-    def SaveParameters(self, path):
+    def GetParameters(self):
         """
-        Save parameter values into a YAML file
-        :param path: path to parameter YAML file
-        :jessica-param-widget path: filepath-save
-        :jessica-favorite:
+        Creates and returns a dictionary of post processing parameters.
+        This dictionary is compatible with SetParameters.
+        :return: a dictionary of post processing parameters.
         """
         params = {}
         for name, param in self._parameters.iteritems():
@@ -681,6 +687,16 @@ class PostProcess(object):
             value = param.GetValue()
             if isinstance(value, (int, long, float, tuple, bool)):
                 params[name] = value
+        return params
+
+    def SaveParameters(self, path):
+        """
+        Save parameter values into a YAML file
+        :param path: path to parameter YAML file
+        :jessica-param-widget path: filepath-save
+        :jessica-favorite:
+        """
+        params = self.GetParameters()
         yamlext.dumpfile(params, blue.paths.ResolvePathForWriting(path))
 
     def Clear(self):
