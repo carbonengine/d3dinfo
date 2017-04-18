@@ -3,17 +3,26 @@ import trinity
 from shadercompiler import effectinfo
 
 
-def _GetMergedParameters(resPath, cache):
+def _GetMergedParameters(resPath, options, cache):
+    options = {name: value for name, value in options}
+    frozen = tuple(options.items())
+
+    def ShaderFilter(platform, sm, permutation):
+        for option, value in permutation:
+            if option.type == effectinfo.Permutation.STATIC and options.get(option.name, None) != value:
+                return False
+        return True
+
     resPath = resPath.lower().replace('\\', '/')
-    if cache and resPath in cache:
-        return dict(cache[resPath][0]), dict(cache[resPath][1]), dict(cache[resPath][2])
+    if cache and (resPath, frozen) in cache:
+        return dict(cache[(resPath, frozen)][0]), dict(cache[(resPath, frozen)][1]), dict(cache[(resPath, frozen)][2])
     path = blue.paths.ResolvePath(resPath)
     try:
-        result = effectinfo.get_merged_parameters(path)
+        result = effectinfo.get_merged_parameters(path, shader_filter=ShaderFilter if options else None)
     except IOError:
         result = {}, {}, {}
     if cache is not None:
-        cache[resPath] = result
+        cache[(resPath, frozen)] = result
     return dict(result[0]), dict(result[1]), dict(result[2])
 
 
@@ -27,7 +36,7 @@ def GetPublicParameters(effect, cache=None):
     :rtype: dict[str, shadercompiler.effectinfo._Parameter]
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path, cache)
+    params, resources, _ = _GetMergedParameters(path, effect.options, cache)
     return {name: param for name, param in params.items() if param.annotation.get('SasUiVisible', False)}
 
 
@@ -41,7 +50,7 @@ def GetPublicResources(effect, cache=None):
     :rtype: dict[str, shadercompiler.effectinfo._Parameter]
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path, cache)
+    params, resources, _ = _GetMergedParameters(path, effect.options, cache)
     return {name: param for name, param in resources.items() if param.annotation.get('SasUiVisible', False)}
 
 
@@ -56,7 +65,7 @@ def GetSamplers(effect, cache=None):
     :rtype: dict[str, shadercompiler.effectinfo.Sampler]
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    return _GetMergedParameters(path, cache)[2]
+    return _GetMergedParameters(path, effect.options, cache)[2]
 
 
 def PopulateParameters(effect, cache=None):
@@ -69,7 +78,7 @@ def PopulateParameters(effect, cache=None):
     :type cache: dict
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path, cache)
+    params, resources, _ = _GetMergedParameters(path, effect.options, cache)
     existing = set()
     for name, _ in effect.constParameters:
         existing.add(name)
@@ -105,7 +114,7 @@ def PruneParameters(effect, cache=None):
     :type cache: dict
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path, cache)
+    params, resources, _ = _GetMergedParameters(path, effect.options, cache)
     params.update(resources)
     params = set([name for name, param in params.items() if param.annotation.get('SasUiVisible', False)])
     delete = []
@@ -139,7 +148,7 @@ def GetUnusedParameters(effect, cache=None):
     :rtype: list[str]
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path, cache)
+    params, resources, _ = _GetMergedParameters(path, effect.options, cache)
     params.update(resources)
     result = []
     for name, _ in effect.constParameters:
@@ -165,7 +174,7 @@ def GetMissingParameters(effect, cache=None):
     :rtype: list[str]
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path, cache)
+    params, resources, _ = _GetMergedParameters(path, effect.options, cache)
     params.update(resources)
     existing = {name for name, _ in effect.constParameters}
     existing.update((p.name for p in effect.parameters))
@@ -186,7 +195,7 @@ def IsParameterUsed(effect, name, cache=None):
     :rtype: bool
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path, cache)
+    params, resources, _ = _GetMergedParameters(path, effect.options, cache)
     return name in params or name in resources
 
 
@@ -203,7 +212,7 @@ def ConstToParameter(effect, name, cache=None):
     :raises ValueError: if the parameter name is invalid
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path, cache)
+    params, resources, _ = _GetMergedParameters(path, effect.options, cache)
     if name not in params:
         raise ValueError('parameter \"%s\" is not used by the effect' % name)
     for i, p in enumerate(effect.constParameters):
@@ -310,7 +319,7 @@ def ValidateParameterValue(effect, name, value, cache=None):
     :raises AssertionError: if validation fails
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path, cache)
+    params, resources, _ = _GetMergedParameters(path, effect.options, cache)
     if name not in params:
         raise ValueError('parameter %s not found in the effect resource' % name)
     validation = params[name].annotation.get('Validation', '')
@@ -336,8 +345,16 @@ def GetVertexShaderInputs(effect):
     :rtype: set[(int, int)]
     """
     inputs = set()
+    options = {name: value for name, value in effect.options}
 
     def inner(shader):
+        """
+        :type shader: shadercompiler.effectinfo.ShaderInfo
+        :return:
+        """
+        for option, value in shader.options:
+            if option.type == effectinfo.Permutation.STATIC and options.get(option.name, None) != value:
+                return
         for each in shader.passes:
             if effectinfo.Stages.VERTEX_SHADER in each.stages:
                 vs = each.stages[effectinfo.Stages.VERTEX_SHADER]
