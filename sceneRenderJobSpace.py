@@ -171,13 +171,27 @@ class SceneRenderJobSpace(SceneRenderJobBase):
     def SuspendRendering(self):
         SceneRenderJobBase.UnscheduleRecurring(self)
         self.scheduled = False
+        self.EnableGpuEmission(False)
 
 
     def Start(self):
         SceneRenderJobBase.Start(self)
+        self.EnableGpuEmission(True)
         if self.updateJob is not None and not self.updateJob.scheduled:
             self.updateJob.ScheduleUpdate()
             self.updateJob.scheduled = True
+
+
+    def EnableGpuEmission(self, enable):
+        if not self.gpuParticlesEnabled:
+            return
+
+        scene = self.GetScene()
+        if scene is None:
+            return
+
+        if scene.gpuParticleSystem is not None:
+            scene.gpuParticleSystem.enableEmit = enable
 
 
     def Disable(self):
