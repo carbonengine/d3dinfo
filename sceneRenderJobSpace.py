@@ -10,6 +10,8 @@ from .renderJobUtils import renderTargetManager as rtm
 from . import evePostProcess
 from .postprocess import PostProcess
 
+DEFAULT_POSTPROCESS_PATH = 'res:/fisfx/postprocess/eve.yaml'
+
 logger = logging.getLogger(__name__)
 
 
@@ -147,7 +149,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         self._enablePostProcessing = True
         self.postProcess = PostProcess()
-        self.postProcess.Load('res:/fisfx/postprocess/eve.yaml')
+        self.postProcess.Load(DEFAULT_POSTPROCESS_PATH)
         self.distortionJob = evePostProcess.EvePostProcessingJob()
         self.backgroundDistortionJob = evePostProcess.EvePostProcessingJob()
 
@@ -482,11 +484,19 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         """
         Sets a scene into the render job
         """
+        self.postProcess.RestoreOverriddenParameters()
+
+        if getattr(scene, "postProcessPath", "") != "":
+            self.postProcess.LoadOverriddenParameters(scene.postProcessPath)
+
+        self.ModifyPostProcessForPerformance()
+
         if self.updateJob is not None:
             if len(self.updateJob.steps) > 0:
                 self._FindUpdateStep("UPDATE_SCENE").object = scene
         else:
             self.SetStepAttr("UPDATE_SCENE", 'object', scene)
+
         self.SetStepAttr("RENDER_MAIN_PASS", 'scene', scene) 
         self.SetStepAttr("BEGIN_RENDER", 'scene', scene)
         self.SetStepAttr("END_RENDERING", 'scene', scene)
@@ -496,7 +506,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._SetBackgroundScene(scene)
 
         self.ApplyPerformancePreferencesToScene()
-
 
     def _CreateBasicRenderSteps(self):
         # Scene update and render
@@ -925,6 +934,15 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._CreateRenderTargets()
         self._RefreshRenderTargets()
 
+        self.ModifyPostProcessForPerformance()
+        self.postProcess.TAA = self.taaEnabled
+
+        self.ApplyPerformancePreferencesToScene()
+
+    def ModifyPostProcessForPerformance(self):
+        if not self.enabled:
+            return
+
         if self.postProcessingQuality == 0 or not self._enablePostProcessing:
             self.postProcess.Bloom = False
             self.postProcess.Desaturate = False
@@ -955,10 +973,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.postProcess.DynamicExposure = _singletons.platform == 'dx11'
             self.postProcess.Tonemapping = _singletons.platform == 'dx11'
             self.postProcess.FinalBlit = True
-        self.postProcess.TAA = self.taaEnabled
-
-        self.ApplyPerformancePreferencesToScene()
-
 
     def ApplyPerformancePreferencesToScene(self):
         self._SetShadowMap()

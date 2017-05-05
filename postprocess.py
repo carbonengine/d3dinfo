@@ -650,6 +650,7 @@ class PostProcess(object):
         super(PostProcess, self).__setattr__('_builtInParameters', self._parameters.keys())
         super(PostProcess, self).__setattr__('__members__', [])
         super(PostProcess, self).__setattr__('_loadPending', False)
+        super(PostProcess, self).__setattr__('_defaultParameterValues', {})
 
         self.Clear()
 
@@ -673,6 +674,19 @@ class PostProcess(object):
         """
         params = yamlext.load(blue.paths.GetFileContentsWithYield(path))
         self.SetParameters(params)
+
+    def LoadOverriddenParameters(self, path):
+        params = yamlext.load(blue.paths.GetFileContentsWithYield(path))
+        # Store the rollback values for the parameters
+        for name in params.keys():
+            if name not in self._defaultParameterValues and name in self._parameters:
+                self._defaultParameterValues[name] = self._parameters[name].GetExposedValue()
+
+        self.SetParameters(params)
+
+    def RestoreOverriddenParameters(self):
+        self.SetParameters(self._defaultParameterValues)
+        self._defaultParameterValues.clear()
 
     def GetParameters(self):
         """
