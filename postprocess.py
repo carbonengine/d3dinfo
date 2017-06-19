@@ -112,6 +112,7 @@ class Parameter(object):
         "parameter description"
         self._type = _GetParameterType(data)
         self._bindings = {}
+        self._defaultValue = None
 
     def UpdateValue(self, parameters):
         """
@@ -168,6 +169,9 @@ class Parameter(object):
 
     def Unload(self):
         pass
+
+    def GetDefaultValue(self):
+        return self._defaultValue
 
 
 class StepAttribute(object):
@@ -254,6 +258,7 @@ class NumericParameter(Parameter):
         else:
             self._dependencies = []
             self._compiled = None
+            self._defaultValue = self.value
 
     def _GetEffectParameter(self, effect, name):
         try:
@@ -292,6 +297,7 @@ class BooleanParameter(Parameter):
         super(BooleanParameter, self).__init__(name, data)
         self.value = data['value']
         self.paramType = trinity.Tr2FloatParameter
+        self._defaultValue = self.value
 
     def GetValue(self):
         return self.value
@@ -687,6 +693,14 @@ class PostProcess(object):
     def RestoreOverriddenParameters(self):
         self.SetParameters(self._defaultParameterValues)
         self._defaultParameterValues.clear()
+
+    def GetParameterDefaultValue(self, paramName):
+        """
+        Returns default value for a parameter. If not default value exists, the function returns None
+        :param paramName: parameter name
+        :type paramName: str
+        """
+        return self._parameters.GetDefaultValue()
 
     def GetParameters(self):
         """
