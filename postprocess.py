@@ -686,7 +686,9 @@ class PostProcess(object):
         # Store the rollback values for the parameters
         for name in params.keys():
             if name not in self._defaultParameterValues and name in self._parameters:
-                self._defaultParameterValues[name] = self._parameters[name].GetExposedValue()
+                defaultValue = self.GetParameterDefaultValue(name)
+                if defaultValue:
+                    self._defaultParameterValues[name] = defaultValue
 
         self.SetParameters(params)
 
@@ -700,7 +702,7 @@ class PostProcess(object):
         :param paramName: parameter name
         :type paramName: str
         """
-        return self._parameters.GetDefaultValue()
+        return self._parameters[paramName].GetDefaultValue()
 
     def GetParameters(self):
         """
