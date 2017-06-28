@@ -93,13 +93,6 @@ class SceneRenderJobSpaceEmbedded(SceneRenderJobSpace):
         self._CreateRenderTargets()
         self._RefreshRenderTargets()
 
-    def EnableFXAA(self, enable):
-        """
-        Need more work to get fxaa working in non-fullscreen viewports.
-        Disabled for now.
-        """
-        pass
-
     def _DoPrepareResources(self):
         self.useDepth = trinity.GetShaderModel().endswith("DEPTH")
         self.prepared = True

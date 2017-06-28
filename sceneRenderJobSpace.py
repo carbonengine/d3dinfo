@@ -76,8 +76,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         "SET_PERFRAME_DATA",
         "RJ_POSTPROCESSING",
         "FINAL_BLIT",
-        "FXAA_CLEAR",
-        "FXAA",
         "FPS_COUNTER"
     ]
 
@@ -124,10 +122,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         self.antiAliasingEnabled = False
         self.aaQuality = 0
-        self.useFXAA = False
         self.useTAA = True
-        self.fxaaEnabled = False
-        self.fxaaQuality = "FXAA_High"
         self.msaaEnabled = False
         self.doDepthPass = False
         self.forceDepthPass = False
@@ -136,7 +131,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.distortionEffectsEnabled = False
         self.secondaryLighting = False
         
-        self.fxaaEffect = None
         self.taaEnabled = False
         self.taaPixelOffset = 0.5
         self.taaPattern = 3
@@ -384,8 +378,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
 
     def _GetDestinationRTForPostProcessing(self):
-        if self.useFXAA and self.antiAliasingEnabled:
-            return self.customBackBuffer
         return None
 
 
@@ -637,9 +629,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         dsFormatAL = _singletons.device.depthStencilFormat
 
         # customBackBuffer
-        useCustomBackBuffer = self.hdrEnabled or self.msaaEnabled or self.fxaaEnabled
+        useCustomBackBuffer = self.hdrEnabled or self.msaaEnabled
         customFormat = trinity.PIXEL_FORMAT.R16G16B16A16_FLOAT if self.hdrEnabled else self.bbFormat
-        # make sure we don't use self.msaaType for comparing rendertargets in case we switch to fxaa.
         # 1 is the default Tr2RenderTarget multiSampleType for non-multisampled render targets.
         msaaType = self.msaaType if self.msaaEnabled else 1
 
@@ -693,12 +684,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         # distortionTexture
         if self.distortionEffectsEnabled:
             index = 0
-            if self.fxaaEnabled and self.bbFormat == trinity.PIXEL_FORMAT.B8G8R8A8_UNORM and not self.hdrEnabled:
-                if useBlitTexture:
-                    index = 2
-                else:
-                    index = 1
-            if self._TargetDiffers(self.distortionTexture, "trinity.Tr2RenderTarget", 
+            if self._TargetDiffers(self.distortionTexture, "trinity.Tr2RenderTarget",
                                    trinity.PIXEL_FORMAT.B8G8R8A8_UNORM, 0, width, height):
                 self.distortionTexture = rtm.GetRenderTargetAL(
                     width, height, 1,
@@ -778,23 +764,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         # Graphics Settings: Again, avoiding this call would be preferrable, 
         # perhaps a util function in evegraphics
         self.msaaType = self._GetMSAATypeFromQuality(self.aaQuality)
-        self.fxaaQuality = self._GetFXAAQuality(self.aaQuality)
-
-        if self.useFXAA:
-            self.EnableFXAA(self.antiAliasingEnabled)
-        else:
-            self.EnableMSAA(self.antiAliasingEnabled)
-
-
-    def UseFXAA(self, flag):
-        self.useFXAA = flag
-
-        if self.useFXAA:
-            self.EnableMSAA(False)
-        else:
-            self.EnableFXAA(False)
-
-        self._RefreshAntiAliasing()
+        self.EnableMSAA(self.antiAliasingEnabled)
 
 
     def EnableDistortionEffects(self, enable):
@@ -804,34 +774,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
     def EnableAntiAliasing(self, enable):
         self.antiAliasingEnabled = enable
         self._RefreshAntiAliasing()
-
-
-    def EnableFXAA(self, enable):
-        self.fxaaEnabled = enable
-
-        if not self.prepared:
-            return
-            
-        if enable:
-            if getattr(self, "fxaaEffect", None) is None:
-                self.fxaaEffect = trinity.Tr2ShaderMaterial()
-                self.fxaaEffect.highLevelShaderName = "PostProcess"
-            self.fxaaEffect.defaultSituation = self.fxaaQuality
-            self.fxaaEffect.BindLowLevelShader([])
-
-            self.AddStep("FXAA", trinity.TriStepRenderFullScreenShader(self.fxaaEffect))
-            if not self.usePostProcessing:
-                self.AddStep("FXAA_CLEAR", trinity.TriStepClear((0,0,0,1), 1.0))
-            self.RemoveStep("FINAL_BLIT")
-        else:
-            self.RemoveStep("FXAA")
-            self.RemoveStep("FXAA_CLEAR")
-
-        if not self.enabled:
-            return
-            
-        self._CreateRenderTargets()
-        self._RefreshRenderTargets()
 
 
     def EnableMSAA(self, enable):
@@ -865,16 +807,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             uthread.new(self.NotifyResourceCreationFailed)
 
 
-    def _GetFXAAQuality(self, quality):
-        if quality >= gfxsettings.AA_QUALITY_MSAA_HIGH:
-            return "FXAA_High"
-        elif quality == gfxsettings.AA_QUALITY_MSAA_MEDIUM:
-            return "FXAA_Medium"
-        elif quality == gfxsettings.AA_QUALITY_MSAA_LOW:
-            return "FXAA_Low"
-
-        return ""
-
     def _GetMSAAQualityFromAAQuality(self, aaQuality):
         qual = gfxsettings.AA_QUALITY_MSAA_HIGH
         try:
@@ -898,9 +830,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
     def _SetSettingsBasedOnPerformancePreferences(self):
         self.msaaQuality = self._GetMSAAQualityFromAAQuality(self.aaQuality)
-        self.antiAliasingEnabled = self.msaaQuality > 0 or (self.useFXAA and self.aaQuality != gfxsettings.AA_QUALITY_DISABLED)
+        self.antiAliasingEnabled = self.msaaQuality > 0
         self.msaaType = self._GetMSAATypeFromQuality(self.aaQuality)
-        self.fxaaQuality = self._GetFXAAQuality(self.aaQuality)
 
         if self.shadowQuality > 0 and self.shadowMap is None:
             self.shadowMap = trinity.TriShadowMap()
@@ -924,7 +855,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         if _singletons.platform == 'dx11':
             self.doDepthPass = (trinity.GetShaderModel() == 'SM_3_0_DEPTH') or self.forceDepthPass
         else:
-            self.doDepthPass = (not self.useFXAA and self.msaaType > 1) or self.forceDepthPass
+            self.doDepthPass = (self.msaaType > 1) or self.forceDepthPass
 
         if self.distortionEffectsEnabled:
             self.distortionJob.AddPostProcess("Distortion", "res:/fisfx/postprocess/distortion.red")

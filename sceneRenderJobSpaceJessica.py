@@ -74,10 +74,7 @@ class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
         return self.GetMultiSampleTypeFromQuality(aaQuality)
 
     def _RefreshAntiAliasing(self):
-        if self.useFXAA:
-            self.EnableFXAA(self.antiAliasingEnabled)
-        else:
-            self.EnableMSAA(self.antiAliasingEnabled)
+        self.EnableMSAA(self.antiAliasingEnabled)
 
     def _GetSettings(self):
         """ See SceneRenderJobSpace._GetSettings """
@@ -93,7 +90,6 @@ class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
         self.antiAliasingEnabled = self.aaQuality > 0
         self.msaaType = self.GetMSAATypeFromQuality(self.aaQuality)
         
-        self.fxaaQuality = self._GetFXAAQuality(self.aaQuality)
         self.taaEnabled = self.settings.get("taa", False)
 
         self.shadowQuality = self.settings["shadowQuality"]
