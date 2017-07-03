@@ -355,10 +355,11 @@ def GetVertexShaderInputs(effect):
         for option, value in shader.options:
             if option.type == effectinfo.Permutation.STATIC and options.get(option.name, None) != value:
                 return
-        for each in shader.passes:
-            if effectinfo.Stages.VERTEX_SHADER in each.stages:
-                vs = each.stages[effectinfo.Stages.VERTEX_SHADER]
-                inputs.update([(x.usage, x.usage_index) for x in vs.inputs if x.used_mask])
+        for technique in shader.techniques:
+            for each in technique.passes:
+                if effectinfo.Stages.VERTEX_SHADER in each.stages:
+                    vs = each.stages[effectinfo.Stages.VERTEX_SHADER]
+                    inputs.update([(x.usage, x.usage_index) for x in vs.inputs if x.used_mask])
 
     effectinfo.apply_to_shaders(blue.paths.ResolvePath(effect.effectFilePath), inner)
     return inputs
