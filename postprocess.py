@@ -480,14 +480,14 @@ class RenderTargetParameter(Parameter):
             if copyFrom and copyFrom.isValid:
                 if 'width' in self._data:
                     if isinstance(self._data['width'], float):
-                        width = int(self._data['width'] * copyFrom.width)
+                        width = max(int(self._data['width'] * copyFrom.width), 1)
                     else:
                         width = self._data['width']
                 else:
                     width = copyFrom.width
                 if 'height' in self._data:
                     if isinstance(self._data['height'], float):
-                        height = int(self._data['height'] * copyFrom.height)
+                        height = max(int(self._data['height'] * copyFrom.height), 1)
                     else:
                         height = self._data['height']
                 else:
