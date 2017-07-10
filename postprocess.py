@@ -687,7 +687,7 @@ class PostProcess(object):
         for name in params.keys():
             if name not in self._defaultParameterValues and name in self._parameters:
                 defaultValue = self.GetParameterDefaultValue(name)
-                if defaultValue:
+                if defaultValue is not None:
                     self._defaultParameterValues[name] = defaultValue
 
         self.SetParameters(params)
