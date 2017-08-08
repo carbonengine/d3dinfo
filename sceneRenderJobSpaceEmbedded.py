@@ -6,6 +6,7 @@ import logging
 
 from . import _trinity as trinity
 from .sceneRenderJobSpace import SceneRenderJobSpace
+from .renderJob import CreateRenderJob
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +99,12 @@ class SceneRenderJobSpaceEmbedded(SceneRenderJobSpace):
         self.prepared = True
 
         self.SetSettingsBasedOnPerformancePreferences()
+
+    def ScheduleUpdateJob(self):
+        if self.updateJob is None:
+            self.updateJob = CreateRenderJob("embedded_Update")
+            self.updateJob.scheduled = False
+        super(SceneRenderJobSpaceEmbedded, self).ScheduleUpdateJob()
 
     def DoReleaseResources(self, level):
         self.finalTexture = None
@@ -193,6 +200,7 @@ class SceneRenderJobSpaceEmbedded(SceneRenderJobSpace):
             if vpStep is not None:
                 vpOrigin = trinity.TriViewport(0, 0, viewport.width, viewport.height)
                 vpStep.viewport = vpOrigin
+                self._SetUpdateStep(vpStep, "SET_VIEWPORT")
 
         if self.offscreenDepthStencil:
             self.AddStep("PUSH_DEPTH_STENCIL", trinity.TriStepPushDepthStencil(self.offscreenDepthStencil))

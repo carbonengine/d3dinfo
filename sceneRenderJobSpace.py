@@ -173,6 +173,10 @@ class SceneRenderJobSpace(SceneRenderJobBase):
     def Start(self):
         SceneRenderJobBase.Start(self)
         self.EnableGpuEmission(True)
+        self.ScheduleUpdateJob()
+
+
+    def ScheduleUpdateJob(self):
         if self.updateJob is not None and not self.updateJob.scheduled:
             self.updateJob.ScheduleUpdate()
             self.updateJob.scheduled = True
@@ -192,6 +196,10 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
     def Disable(self):
         SceneRenderJobBase.Disable(self)
+        self.UnscheduleUpdateJob()
+
+
+    def UnscheduleUpdateJob(self):
         if self.updateJob is not None and self.updateJob.scheduled:
             self.updateJob.UnscheduleUpdate()
             self.updateJob.scheduled = False
@@ -199,9 +207,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
     def UnscheduleRecurring(self, scheduledRecurring=None):
         SceneRenderJobBase.UnscheduleRecurring(self, scheduledRecurring)
-        if self.updateJob is not None and self.updateJob.scheduled:
-            self.updateJob.UnscheduleUpdate()
-            self.updateJob.scheduled = False
+        self.UnscheduleUpdateJob()
 
   
     def SetClientToolsScene(self, scene):
@@ -238,7 +244,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._SetUpdateStep(trinity.TriStepSetProjection(proj), "SET_UI_PROJECTION")
 
     def SetCameraCallback(self, cb):
-        if self.updateJob is not None:
+        if self.updateJob is not None and self.updateJob.scheduled:
             self._SetUpdateStep(trinity.TriStepPythonCB(cb), "CAMERA_UPDATE")
         else:
             self.AddStep("CAMERA_UPDATE", trinity.TriStepPythonCB(cb))
@@ -456,10 +462,18 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         step.name = name
 
     def _CreateUpdateSteps(self):
+        self._CreateUpdateStep(trinity.TriStepSetView(), "SET_VIEWPORT")
         self._CreateUpdateStep(trinity.TriStepPythonCB(), "CAMERA_UPDATE")
         self._CreateUpdateStep(trinity.TriStepSetView(), "SET_VIEW")
         self._CreateUpdateStep(trinity.TriStepSetProjection(), "SET_PROJECTION")
+        self._CreateUpdateStep(trinity.TriStepUpdate(), "UPDATE_BRACKETS")
         self._CreateUpdateStep(trinity.TriStepUpdate(self.GetScene()), "UPDATE_SCENE")
+
+    def SetBracketCurveSet(self, cs):
+        if self.updateJob is not None and self.updateJob.scheduled:
+                self._FindUpdateStep("UPDATE_BRACKETS").object = cs
+        else:
+            self.SetStepAttr("UPDATE_BRACKETS", 'object', cs)
 
     def _SetUpdateStep(self, step, name):
         if self.updateJob is None:
@@ -506,8 +520,10 @@ class SceneRenderJobSpace(SceneRenderJobBase):
                 self._CreateUpdateSteps()
             else:
                 self._SetUpdateStep(trinity.TriStepUpdate(self.GetScene(), "UPDATE_SCENE"))
+                self._SetUpdateStep(trinity.TriStepUpdate(), "UPDATE_BRACKETS")
         else:
             self.AddStep("UPDATE_SCENE", trinity.TriStepUpdate(self.GetScene()))
+            self.AddStep("UPDATE_BRACKETS", trinity.TriStepUpdate())
         self.AddStep("BEGIN_RENDER", trinity.TriStepRenderPass(self.GetScene(), trinity.TRIPASS_BEGIN_RENDER))
         self.AddStep("END_RENDERING", trinity.TriStepRenderPass(self.GetScene(), trinity.TRIPASS_END_RENDER))
         self.AddStep("RENDER_MAIN_PASS", trinity.TriStepRenderPass(self.GetScene(), trinity.TRIPASS_MAIN_RENDER))
