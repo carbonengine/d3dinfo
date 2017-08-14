@@ -462,7 +462,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         step.name = name
 
     def _CreateUpdateSteps(self):
-        self._CreateUpdateStep(trinity.TriStepSetView(), "SET_VIEWPORT")
+        self._CreateUpdateStep(trinity.TriStepSetViewport(), "SET_VIEWPORT")
         self._CreateUpdateStep(trinity.TriStepPythonCB(), "CAMERA_UPDATE")
         self._CreateUpdateStep(trinity.TriStepSetView(), "SET_VIEW")
         self._CreateUpdateStep(trinity.TriStepSetProjection(), "SET_PROJECTION")
@@ -524,6 +524,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         else:
             self.AddStep("UPDATE_SCENE", trinity.TriStepUpdate(self.GetScene()))
             self.AddStep("UPDATE_BRACKETS", trinity.TriStepUpdate())
+        self.AddStep("SET_VIEWPORT", trinity.TriStepSetViewport())
         self.AddStep("BEGIN_RENDER", trinity.TriStepRenderPass(self.GetScene(), trinity.TRIPASS_BEGIN_RENDER))
         self.AddStep("END_RENDERING", trinity.TriStepRenderPass(self.GetScene(), trinity.TRIPASS_END_RENDER))
         self.AddStep("RENDER_MAIN_PASS", trinity.TriStepRenderPass(self.GetScene(), trinity.TRIPASS_MAIN_RENDER))
