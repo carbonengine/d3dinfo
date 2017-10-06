@@ -941,6 +941,10 @@ class SceneRenderJobSpace(SceneRenderJobBase):
                 scene.gpuParticleSystem = blue.resMan.LoadObject('res:/fisfx/gpuparticles/system.red')
         else:
             scene.gpuParticleSystem = None
+        if self.msaaEnabled:
+            scene.msaaSamples = self.msaaType
+        else:
+            scene.msaaSamples = 1
         if self.taaEnabled:
             scene.pixelOffsetScale = self.taaPixelOffset
             scene.taaSubpixelPattern = self.taaPattern
