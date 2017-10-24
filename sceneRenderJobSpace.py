@@ -462,12 +462,14 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         step.name = name
 
     def _CreateUpdateSteps(self):
+        self._CreateUpdateStep(trinity.TriStepPushViewport(), "PUSH_VIEWPORT")
         self._CreateUpdateStep(trinity.TriStepSetViewport(), "SET_VIEWPORT")
         self._CreateUpdateStep(trinity.TriStepPythonCB(), "CAMERA_UPDATE")
         self._CreateUpdateStep(trinity.TriStepSetView(), "SET_VIEW")
         self._CreateUpdateStep(trinity.TriStepSetProjection(), "SET_PROJECTION")
         self._CreateUpdateStep(trinity.TriStepUpdate(), "UPDATE_BRACKETS")
         self._CreateUpdateStep(trinity.TriStepUpdate(self.GetScene()), "UPDATE_SCENE")
+        self._CreateUpdateStep(trinity.TriStepPopViewport(), "POP_VIEWPORT")
 
     def SetBracketCurveSet(self, cs):
         if self.updateJob is not None and self.updateJob.scheduled:
