@@ -678,13 +678,13 @@ class SceneRenderJobSpace(SceneRenderJobBase):
                     self.depthTexture = self.customDepthStencil
                 elif self._TargetDiffers(self.depthTexture, "trinity.Tr2DepthStencil", trinity.DEPTH_STENCIL_FORMAT.D32F, 0, width, height):
                     self.depthTexture = rtm.GetDepthStencilAL(width, height, trinity.DEPTH_STENCIL_FORMAT.D32F)
-                    if self.depthTexture is not None and self.depthTexture.IsReadable():
+                    if self.depthTexture is not None and self.depthTexture.isReadable:
                         self.depthTexture.name = 'sceneRenderJobSpace.depthTexture'
                     else:
                         self.depthTexture = None
             elif self._TargetDiffers(self.depthTexture, "trinity.Tr2DepthStencil", trinity.DEPTH_STENCIL_FORMAT.READABLE, 0, width, height):
                 self.depthTexture = rtm.GetDepthStencilAL(width, height, trinity.DEPTH_STENCIL_FORMAT.READABLE)
-                if self.depthTexture is not None and self.depthTexture.IsReadable():
+                if self.depthTexture is not None and self.depthTexture.isReadable:
                     self.depthTexture.name = 'sceneRenderJobSpace.depthTexture'
                 else:
                     self.depthTexture = None
