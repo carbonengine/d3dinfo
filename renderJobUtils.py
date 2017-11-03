@@ -59,7 +59,7 @@ class RenderTargetManager(object):
     def _CreateRenderTargetMsaaAL(width, height, format, msaaType, msaaQuality, target=None):
         if target is None:
             target = _trinity.Tr2RenderTarget()
-        target.CreateMsaa(width, height, format, msaaType, msaaQuality)
+        target.Create(width, height, 1, format, msaaType, msaaQuality)
         return target
 
     def GetRenderTargetAL(self, width, height, mipLevels, format, index=0):
