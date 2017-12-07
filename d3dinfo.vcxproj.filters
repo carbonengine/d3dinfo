@@ -13,6 +13,9 @@
     <ClInclude Include="d3d9info.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="D3DInfoError.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
     <ClInclude Include="DisplayModeInfo.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -32,6 +35,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="d3dinfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D3DInfoError.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DisplayModeInfo.cpp">

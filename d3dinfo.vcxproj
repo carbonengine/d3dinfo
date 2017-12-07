@@ -9,6 +9,22 @@
       <Configuration>Release_27</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_27|x64">
+      <Configuration>Debug_27</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_27|Win32">
+      <Configuration>Debug_27</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_26|Win32">
+      <Configuration>Release_26</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_26|x64">
+      <Configuration>Release_26</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals"/>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'" Label="Configuration">
@@ -17,59 +33,94 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'" Label="Configuration">
     <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'" Label="Configuration">
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|Win32'" Label="Configuration">
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_26|Win32'" Label="Configuration">
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_26|x64'" Label="Configuration">
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)/Microsoft.Cpp.Default.props"/>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'">
     <TargetExt>.pyd</TargetExt>
+    <IntDir>..\temp\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <UseOfMfc>False</UseOfMfc>
-    <IntDir>../../autobuild/temp/$(ProjectName)/$(Platform)/$(Configuration)/</IntDir>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'">
     <TargetExt>.pyd</TargetExt>
+    <IntDir>..\temp\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <UseOfMfc>False</UseOfMfc>
-    <IntDir>../../autobuild/temp/$(ProjectName)/$(Platform)/$(Configuration)/</IntDir>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'">
+    <TargetExt>.pyd</TargetExt>
+    <IntDir>..\temp\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <UseOfMfc>False</UseOfMfc>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|Win32'">
+    <TargetExt>.pyd</TargetExt>
+    <IntDir>..\temp\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <UseOfMfc>False</UseOfMfc>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_26|Win32'">
+    <TargetExt>.pyd</TargetExt>
+    <IntDir>..\temp\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <UseOfMfc>False</UseOfMfc>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_26|x64'">
+    <TargetExt>.pyd</TargetExt>
+    <IntDir>..\temp\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <UseOfMfc>False</UseOfMfc>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)/Microsoft.Cpp.props"/>
-  <PropertyGroup Label="UserMacros">
-    <CcpSdkPath>../../../../../../sdk</CcpSdkPath>
-    <CcpSharedToolsPath>../../../../../../shared_tools</CcpSharedToolsPath>
-    <CcpBranchPath>../../..</CcpBranchPath>
-  </PropertyGroup>
-  <ItemGroup>
-    <BuildMacro Include="CcpSdkPath">
-      <Value>$(CcpSdkPath)</Value>
-    </BuildMacro>
-    <BuildMacro Include="CcpSharedToolsPath">
-      <Value>$(CcpSharedToolsPath)</Value>
-    </BuildMacro>
-    <BuildMacro Include="CcpBranchPath">
-      <Value>$(CcpBranchPath)</Value>
-    </BuildMacro>
-  </ItemGroup>
   <ImportGroup Label="ExtensionSettings"/>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'" Label="PropertySheets"/>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'" Label="PropertySheets"/>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'" Label="PropertySheets"/>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|Win32'" Label="PropertySheets"/>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_26|Win32'" Label="PropertySheets"/>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_26|x64'" Label="PropertySheets"/>
   <PropertyGroup>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'">.pyd</TargetExt>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'">d3dinfo</TargetName>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'">..\..\autobuild\d3dinfo\python_27\$(Platform)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'">..\bin\python_27\$(Platform)\</OutDir>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'">.pyd</TargetExt>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'">d3dinfo</TargetName>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'">..\..\autobuild\d3dinfo\python_27\$(Platform)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'">..\bin\python_27\$(Platform)\</OutDir>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'">.pyd</TargetExt>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'">d3dinfo_d</TargetName>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'">..\bin\python_27\$(Platform)\</OutDir>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug_27|Win32'">.pyd</TargetExt>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_27|Win32'">d3dinfo_d</TargetName>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_27|Win32'">..\bin\python_27\$(Platform)\</OutDir>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release_26|Win32'">.pyd</TargetExt>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_26|Win32'">d3dinfo</TargetName>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_26|Win32'">..\bin\python_26\$(Platform)\</OutDir>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release_26|x64'">.pyd</TargetExt>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_26|x64'">d3dinfo</TargetName>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_26|x64'">..\bin\python_26\$(Platform)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'">
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;BLUEBUILD_STATIC;BLUEBUILD_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(CcpSdkPath)\Python\27_64\include;$(CcpSdkPath)\telemetry\2.1A3\include;.;$(CcpBranchPath)/carbon/src;$(CcpSdkPath)\directx\february2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>True</MultiProcessorCompilation>
-      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <PreprocessorDefinitions>BLUEBUILD_STATIC;BLUEBUILD_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\sdk\Python\27_64\include;..\sdk\telemetry\1.1h\include;.;..;..\sdk\directx\february2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>True</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(CcpSdkPath)\Python\27_64\libs;../../autobuild/BlueExposure/python_27/$(Platform)/$(PlatformToolset);$(CcpSdkPath)\telemetry\2.1A3\lib;../../autobuild/CcpCore/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\sdk\Python\27_64\libs;..\BlueExposure\lib\python_27\$(Platform);..\sdk\telemetry\1.1h\lib;../CcpCore/lib/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
       <AdditionalDependencies>python27.lib;BlueExposureStatic.lib;CcpCoreStatic.lib;telemetry64.link.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -78,17 +129,86 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'">
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;BLUEBUILD_STATIC;BLUEBUILD_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(CcpSdkPath)\Python\27\include;$(CcpSdkPath)\telemetry\2.1A3\include;.;$(CcpBranchPath)/carbon/src;$(CcpSdkPath)\directx\february2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>True</MultiProcessorCompilation>
-      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <PreprocessorDefinitions>BLUEBUILD_STATIC;BLUEBUILD_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\sdk\Python\27\include;..\sdk\telemetry\1.1h\include;.;..;..\sdk\directx\february2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>True</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(CcpSdkPath)\Python\27\libs;../../autobuild/BlueExposure/python_27/$(Platform)/$(PlatformToolset);$(CcpSdkPath)\telemetry\2.1A3\lib;../../autobuild/CcpCore/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\sdk\Python\27\libs;..\BlueExposure\lib\python_27\$(Platform);..\sdk\telemetry\1.1h\lib;../CcpCore/lib/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
       <AdditionalDependencies>python27.lib;BlueExposureStatic.lib;CcpCoreStatic.lib;telemetry32.link.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile/>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PreprocessorDefinitions>_DEBUG;BLUEBUILD_STATIC;BLUEBUILD_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\sdk\Python\27_64\include;..\sdk\telemetry\1.1h\include;.;..;..\sdk\directx\february2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>True</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\sdk\Python\27_64\libs;..\BlueExposure\lib\exefile\$(Platform);..\sdk\telemetry\1.1h\lib;../CcpCore/lib/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <AdditionalDependencies>python27_d.lib;BlueExposureStatic_d.lib;CcpCoreStatic_d.lib;telemetry64.link.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile/>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PreprocessorDefinitions>_DEBUG;BLUEBUILD_STATIC;BLUEBUILD_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\sdk\Python\27\include;..\sdk\telemetry\1.1h\include;.;..;..\sdk\directx\february2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>True</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\sdk\Python\27\libs;..\BlueExposure\lib\exefile\$(Platform);..\sdk\telemetry\1.1h\lib;../CcpCore/lib/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <AdditionalDependencies>python27_d.lib;BlueExposureStatic_d.lib;CcpCoreStatic_d.lib;telemetry32.link.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile/>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_26|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;BLUEBUILD_STATIC;BLUEBUILD_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\sdk\Python\26\include;..\sdk\telemetry\1.1h\include;.;..;..\sdk\directx\february2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>True</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\sdk\Python\26\libs;..\BlueExposure\lib\python_26\$(Platform);..\sdk\telemetry\1.1h\lib;../CcpCore/lib/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <AdditionalDependencies>python26.lib;BlueExposureStatic.lib;CcpCoreStatic.lib;telemetry32.link.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile/>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_26|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;BLUEBUILD_STATIC;BLUEBUILD_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\sdk\Python\26_64\include;..\sdk\telemetry\1.1h\include;.;..;..\sdk\directx\february2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>True</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\sdk\Python\26_64\libs;..\BlueExposure\lib\python_26\$(Platform);..\sdk\telemetry\1.1h\lib;../CcpCore/lib/$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <AdditionalDependencies>python26.lib;BlueExposureStatic.lib;CcpCoreStatic.lib;telemetry64.link.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile/>
   </ItemDefinitionGroup>
@@ -96,6 +216,7 @@
     <ClInclude Include="AdapterInfo.h"/>
     <ClInclude Include="D3D11Info.h"/>
     <ClInclude Include="d3d9info.h"/>
+    <ClInclude Include="D3DInfoError.h"/>
     <ClInclude Include="DisplayModeInfo.h"/>
     <ClInclude Include="PixelFormat.h"/>
     <ClInclude Include="StdAfx.h"/>
@@ -105,6 +226,7 @@
     <ClCompile Include="D3D11Info.cpp"/>
     <ClCompile Include="d3d9info.cpp"/>
     <ClCompile Include="d3dinfo.cpp"/>
+    <ClCompile Include="D3DInfoError.cpp"/>
     <ClCompile Include="DisplayModeInfo.cpp"/>
     <ClCompile Include="PixelFormat.cpp"/>
     <ClCompile Include="StdAfx.cpp">
