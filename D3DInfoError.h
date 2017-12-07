@@ -18,32 +18,28 @@ enum ResultCode
 	BRC_NOT_IMPLEMENTED
 };
 
-namespace Be
+template<>
+struct Be::Result<ResultCode>
 {
+	ResultCode code;
+	std::string message;
 
-	template<>
-	struct Result<ResultCode>
+	Be::Result<ResultCode>() : code( BRC_OK ) {}
+	Be::Result<ResultCode>( ResultCode c, const char* msg ) : code( c ), message( msg ) {}
+
+	operator bool()
 	{
-		ResultCode code;
-		std::string message;
-
-		Result<ResultCode>() : code( BRC_OK ) {}
-		Result<ResultCode>( ResultCode c, const char* msg ) : code( c ), message( msg ) {}
-
-		operator bool()
-		{
-			return code == BRC_OK;
-		}
-	};
-
-	inline bool IsSuccess( const Result<ResultCode>& result )
-	{
-		return result.code == BRC_OK;
+		return code == BRC_OK;
 	}
+};
 
-	const char* GetErrorMessage( const Result<ResultCode>& result );
-	PyObject* GetException( const Result<ResultCode>& result );
-}
+// Inlined due to redefinitions during linking :/
+bool BeIsSuccess( const Be::Result<ResultCode>& result );
+const char* BeGetErrorMessage( const Be::Result<ResultCode>& result );
+
+#if BLUE_WITH_PYTHON
+PyObject* BeGetException( const Be::Result<ResultCode>& result );
+#endif
 
 typedef Be::Result<ResultCode> D3DInfoResult;
 

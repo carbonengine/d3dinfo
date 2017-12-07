@@ -28,7 +28,6 @@ BLUE_DEFINE( DisplayModeInfo );
 const Be::ClassInfo* DisplayModeInfo::ExposeToBlue()
 {
 	EXPOSURE_BEGIN( DisplayModeInfo, "" )
-
 		MAP_ATTRIBUTE( "width", width, "Back buffer width", Be::READ )
 		MAP_ATTRIBUTE( "height", height, "Back buffer height", Be::READ )
 		MAP_ATTRIBUTE( "refreshRateNumerator", refreshRateNumerator, "Refresh rate numenator", Be::READ )

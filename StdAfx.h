@@ -5,7 +5,7 @@
 // Copyright:	CCP 2013
 //
 
-#include "BlueExposure/include/BlueExposure.h"
+#include "BlueExposure.h"
 #include <d3d9.h>
 #include <atlcomcli.h>
 #include <dxgi.h>

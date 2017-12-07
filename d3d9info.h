@@ -14,7 +14,6 @@
 BLUE_DECLARE( AdapterInfo );
 BLUE_DECLARE( DisplayModeInfo );
 
-
 BLUE_CLASS( D3D9Info ) : public IRoot
 {
 public:

@@ -8,9 +8,6 @@
 #include "StdAfx.h"
 #include "AdapterInfo.h"
 
-namespace
-{
-
 bool IsOptimus()
 {
 	static bool initialized = false;
@@ -80,8 +77,7 @@ bool GetRegistryValue( HKEY key, const char* name, std::string& value )
 	return false;
 }
 
-}
-
+BLUE_DEFINE_INTERFACE(IAdapterInfo);
 BLUE_DEFINE( AdapterInfo );
 
 const Be::ClassInfo* AdapterInfo::ExposeToBlue()

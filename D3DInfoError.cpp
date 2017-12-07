@@ -8,26 +8,27 @@
 #include "StdAfx.h"
 #include "D3DInfoError.h"
 
-namespace Be
+bool BeIsSuccess( const Be::Result<ResultCode>& result )
 {
-	const char* GetErrorMessage( const Result<ResultCode>& result )
+	 return result.code == BRC_OK;
+}
+
+const char* BeGetErrorMessage( const Be::Result<ResultCode>& result )
+{
+	return result.message.c_str();
+}
+
+PyObject* BeGetException( const Be::Result<ResultCode>& result )
+{
+	switch( result.code )
 	{
-		return result.message.c_str();
+		case BRC_INDEX_ERROR:
+			return PyExc_IndexError;
+
+		case BRC_RUNTIME_ERROR:
+			return PyExc_RuntimeError;
+
+		default:
+			return PyExc_RuntimeError;
 	}
-
-	PyObject* GetException( const Result<ResultCode>& result )
-	{
-		switch( result.code )
-		{
-			case BRC_INDEX_ERROR:
-				return PyExc_IndexError;
-
-			case BRC_RUNTIME_ERROR:
-				return PyExc_RuntimeError;
-
-			default:
-				return PyExc_RuntimeError;
-		}
-	}
-
 }

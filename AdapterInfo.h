@@ -33,7 +33,6 @@ public:
 
 	std::string GetDeviceIdentifierString() const;
 	void PopulateDriverVersion();
-private:
 };
 
 TYPEDEF_BLUECLASS( AdapterInfo );

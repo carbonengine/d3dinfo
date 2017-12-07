@@ -1,16 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files"/>
+    <Filter Include="Source Files" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AdapterInfo.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="D3D11Info.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="d3d9info.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="D3DInfoError.h">
@@ -28,12 +22,6 @@
     <ClCompile Include="AdapterInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D3D11Info.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="d3d9info.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="d3dinfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -47,6 +35,20 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="StdAfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClInclude Include="d3d9info.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D3D11Info.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="d3d9info.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D11Info.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -14,6 +14,8 @@
 BLUE_DECLARE( AdapterInfo );
 BLUE_DECLARE( DisplayModeInfo );
 
+// Done here, because REFIID conflicts with blue macros
+typedef HRESULT (WINAPI *LPCreateDXGIFactory)(REFIID riid, void **ppFactory);
 
 BLUE_CLASS( D3D11Info ) : public IRoot
 {
@@ -35,7 +37,6 @@ private:
 	D3DInfoResult GetDisplayMode( uint32_t adapterIndex, PixelFormat backBufferFormat, uint32_t modeIndex, DisplayModeInfo** displayMode );
 	
 	HMODULE m_dxgiModuleHandle;
-	typedef HRESULT (WINAPI *LPCreateDXGIFactory)(REFIID riid, void **ppFactory);
 	LPCreateDXGIFactory m_createDxgiFactory;
 	CComPtr<IDXGIFactory> m_dxgiFactory;
 
