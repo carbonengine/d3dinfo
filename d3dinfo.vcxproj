@@ -112,7 +112,7 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PreprocessorDefinitions>_DEBUG;BLUE_WITH_PYTHON=1;BLUEBUILD_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..;..\BlueExposure\include;..\..\..\..\..\..\sdk\Python\27\include;..\..\..\..\..\..\..\sdk\Telemetry\3.0.1.1008\include;.;..\..\..\..\..\..\sdk\directx\February2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;..\BlueExposure\include;..\..\..\..\..\..\sdk\Python\27\include;..\..\..\..\..\..\sdk\Telemetry\3.0.1.1008\include;.;..\..\..\..\..\..\sdk\directx\February2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
