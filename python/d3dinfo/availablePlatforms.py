@@ -24,8 +24,6 @@ def IsD3D9Valid():
         adapterCount = d3d.GetAdapterCount()
         if adapterCount > 0:
             isOK = True
-        if not d3dinfo.IsD3DXVersionAvailable(42, 9):
-            isOK = False            
         d3d.ShutdownD3D()
     except RuntimeError:
         pass
@@ -47,8 +45,6 @@ def IsD3D11Valid():
         adapterCount = d3d.GetAdapterCount()
         if adapterCount > 0:
             isOK = True
-        if not d3dinfo.IsD3DXVersionAvailable(42, 11):
-            isOK = False            
         d3d.ShutdownD3D()
     except RuntimeError:
         pass
