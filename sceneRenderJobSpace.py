@@ -44,8 +44,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         "SET_SWAPCHAIN_DEPTH",
         "SET_UPDATE_VIEW",
         "SET_UPDATE_PROJECTION",
-        "UPDATE_PHYSICS",
-        "UPDATE_SCENE",
         "SET_CUSTOM_RT",
         "SET_DEPTH",
         "SET_VAR_DEPTH",
@@ -54,6 +52,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         "CAMERA_UPDATE",
         "SET_PROJECTION",
         "SET_VIEW",
+        "UPDATE_PHYSICS",
+        "UPDATE_SCENE",
         "UPDATE_BRACKETS",
         "CLEAR",
         "BEGIN_RENDER",
@@ -467,15 +467,10 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._CreateUpdateStep(trinity.TriStepPythonCB(), "CAMERA_UPDATE")
         self._CreateUpdateStep(trinity.TriStepSetView(), "SET_VIEW")
         self._CreateUpdateStep(trinity.TriStepSetProjection(), "SET_PROJECTION")
-        self._CreateUpdateStep(trinity.TriStepUpdate(), "UPDATE_BRACKETS")
-        self._CreateUpdateStep(trinity.TriStepUpdate(self.GetScene()), "UPDATE_SCENE")
         self._CreateUpdateStep(trinity.TriStepPopViewport(), "POP_VIEWPORT")
 
     def SetBracketCurveSet(self, cs):
-        if self.updateJob is not None and self.updateJob.scheduled:
-                self._FindUpdateStep("UPDATE_BRACKETS").object = cs
-        else:
-            self.SetStepAttr("UPDATE_BRACKETS", 'object', cs)
+        self.SetStepAttr("UPDATE_BRACKETS", 'object', cs)
 
     def _SetUpdateStep(self, step, name):
         if self.updateJob is None:
@@ -501,12 +496,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         self.ModifyPostProcessForPerformance()
 
-        if self.updateJob is not None:
-            if len(self.updateJob.steps) > 0:
-                self._FindUpdateStep("UPDATE_SCENE").object = scene
-        else:
-            self.SetStepAttr("UPDATE_SCENE", 'object', scene)
-
+        self.SetStepAttr("UPDATE_SCENE", 'object', scene)
         self.SetStepAttr("RENDER_MAIN_PASS", 'scene', scene) 
         self.SetStepAttr("BEGIN_RENDER", 'scene', scene)
         self.SetStepAttr("END_RENDERING", 'scene', scene)
@@ -522,12 +512,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         if self.updateJob is not None:
             if len(self.updateJob.steps) == 0:
                 self._CreateUpdateSteps()
-            else:
-                self._SetUpdateStep(trinity.TriStepUpdate(self.GetScene(), "UPDATE_SCENE"))
-                self._SetUpdateStep(trinity.TriStepUpdate(), "UPDATE_BRACKETS")
-        else:
-            self.AddStep("UPDATE_SCENE", trinity.TriStepUpdate(self.GetScene()))
-            self.AddStep("UPDATE_BRACKETS", trinity.TriStepUpdate())
+        self.AddStep("UPDATE_SCENE", trinity.TriStepUpdate(self.GetScene()))
+        self.AddStep("UPDATE_BRACKETS", trinity.TriStepUpdate())
         self.AddStep("SET_VIEWPORT", trinity.TriStepSetViewport())
         self.AddStep("BEGIN_RENDER", trinity.TriStepRenderPass(self.GetScene(), trinity.TRIPASS_BEGIN_RENDER))
         self.AddStep("END_RENDERING", trinity.TriStepRenderPass(self.GetScene(), trinity.TRIPASS_END_RENDER))
