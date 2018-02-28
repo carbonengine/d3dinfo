@@ -890,6 +890,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.postProcess.GodRays = False
             self.postProcess.DynamicExposure = False
             self.postProcess.Tonemapping = False
+            self.postProcess.Vignette = False
             self.postProcess.FinalBlit = not (self.taaEnabled and self.customBackBuffer is None)
         elif self.postProcessingQuality == 1:
             self.postProcess.Bloom = True
@@ -900,6 +901,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.postProcess.GodRays = False
             self.postProcess.DynamicExposure = False
             self.postProcess.Tonemapping = False
+            self.postProcess.Vignette = True
             self.postProcess.FinalBlit = True
         elif self.postProcessingQuality == 2:
             self.postProcess.Bloom = True
@@ -910,6 +912,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.postProcess.GodRays = True
             self.postProcess.DynamicExposure = _singletons.platform == 'dx11'
             self.postProcess.Tonemapping = _singletons.platform == 'dx11'
+            self.postProcess.Vignette = True
             self.postProcess.FinalBlit = True
 
     def ApplyPerformancePreferencesToScene(self):
