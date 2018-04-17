@@ -984,7 +984,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         if customBackBuffer is not None or self.taaEnabled:
             self.AddStep("FINAL_BLIT", trinity.TriStepRunJob(self.postProcess.renderJob))
         else:
-            self.RemoveStep("FINAL_BLIT")
+            self.AddStep("FINAL_BLIT", trinity.TriStepRunJob(self.postProcess.indispensableRenderJob))
 
         if customDepthStencil is not None:
             self.AddStep("SET_DEPTH", trinity.TriStepPushDepthStencil(customDepthStencil))

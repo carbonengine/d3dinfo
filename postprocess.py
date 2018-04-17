@@ -642,6 +642,9 @@ class PostProcess(object):
         super(PostProcess, self).__setattr__('renderJob', trinity.TriRenderJob())
         self.renderJob.name = 'Post Process'
         self.renderJob.enabled = False
+        super(PostProcess, self).__setattr__('indispensableRenderJob', trinity.TriRenderJob())
+        self.indispensableRenderJob.name = 'Indispensable Post Process'
+
         super(PostProcess, self).__setattr__('source', None)
         super(PostProcess, self).__setattr__('dest', None)
         super(PostProcess, self).__setattr__('velocity', None)
@@ -789,6 +792,7 @@ steps:
         # noinspection PyAttributeOutsideInit
         self._data = yamlext.loads(data)
         del self.renderJob.steps[:]
+        del self.indispensableRenderJob.steps[:]
         if self.source:
             self._LoadData(self._data)
             super(PostProcess, self).__setattr__('_loadPending', False)
@@ -920,12 +924,14 @@ steps:
         self._UpdateParameters()
 
         del self.renderJob.steps[:]
+        del self.indispensableRenderJob.steps[:]
+        self.indispensableRenderJob.steps.append(trinity.TriStepSetStdRndStates(trinity.RM_FULLSCREEN))
 
         for each in data.get('steps', []):
             usedParameters = set()
             step = getattr(trinity, 'TriStep%s' % each['type'])()
             for key, value in each.iteritems():
-                if key not in ('type', 'parameters', 'effectParameters', 'condition', 'renderTargets', 'stepAttributes'):
+                if key not in ('type', 'parameters', 'effectParameters', 'condition', 'renderTargets', 'stepAttributes', 'indispensable'):
                     if isinstance(value, dict):
                         reader = blue.DictReader()
                         value = reader.CreateObject(value)
@@ -963,6 +969,8 @@ steps:
                 steps.append(setrt)
                 usedParameters.add(rt)
             self.renderJob.steps.append(step)
+            if each.get('indispensable', False):
+                self.indispensableRenderJob.steps.append(step)
             if 'condition' in each:
                 self._stepDependencies.append((usedParameters.union(_GetConditionDependencies(each['condition'])),
                                                compile(each['condition'], 'string', 'eval'), steps))
