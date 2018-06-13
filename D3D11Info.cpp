@@ -191,7 +191,8 @@ D3DInfoResult D3D11Info::InitializeD3D()
 
 		CComPtr<IDXGIOutput> pOutput;
 		uint32_t outputIndex = 0;
-		while( SUCCEEDED( pAdapter->EnumOutputs( outputIndex++, &pOutput ) ) )
+		// We take the address of the p member directly, since taking the address of a CComPtrBase results in an assertion error on debug versions
+		while( SUCCEEDED( pAdapter->EnumOutputs( outputIndex++, &pOutput.p ) ) )
 		{
 			AdapterInfoPtr info;
 			info.CreateInstance();
