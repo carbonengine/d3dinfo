@@ -866,7 +866,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         
         self.usePostProcessing = self.postProcessingQuality > 0
         if _singletons.platform == 'dx11':
-            self.doDepthPass = (trinity.GetShaderModel() == 'SM_3_0_DEPTH') or self.forceDepthPass
+            self.doDepthPass = (trinity.GetShaderModel() != 'SM_3_0_LO') or self.forceDepthPass
         else:
             self.doDepthPass = (self.msaaType > 1) or self.forceDepthPass
 
