@@ -282,7 +282,7 @@ class ParticleSystemElementsDescription(object):
         self._cachedGeneratorProxies = {}
 
         self._removeFromList = removeFromList or _RemoveFromList
-        self._addToList = removeFromList or _AddToList
+        self._addToList = addToList or _AddToList
 
         for each in system.elements:
             d = ParticleSystemElementDescription(each.elementType, each.usageIndex)
