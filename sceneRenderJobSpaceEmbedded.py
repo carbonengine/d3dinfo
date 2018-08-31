@@ -141,7 +141,6 @@ class SceneRenderJobSpaceEmbedded(SceneRenderJobSpace):
 
         # These are currently disabled
         self.usePostProcessing = False
-        self.distortionEffectsEnabled = False
 
     def _GetSourceRTForPostProcessing(self):
         if self.msaaEnabled or self.hdrEnabled:
