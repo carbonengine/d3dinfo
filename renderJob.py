@@ -76,7 +76,10 @@ class RenderJob(object):
         Block until this job has finished.
         """
         while not ((self.status == trinity.RJ_DONE) or (self.status == trinity.RJ_FAILED) or self.cancelled):
-            blue.synchro.Yield()
+            try:
+                blue.synchro.Yield()
+            except AttributeError:
+                blue.os.Pump()
 
 
 def _GetRenderJobCreationClosure( functionName, doc, classThunker ):
