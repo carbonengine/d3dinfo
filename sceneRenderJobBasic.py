@@ -23,11 +23,12 @@ class SceneRenderJobBasic( SceneRenderJobBase ):
     # See: AddStep
     renderStepOrder = [
         "UPDATE_SCENE",
+        "PRESENT_SWAPCHAIN",
+        "SET_RENDERTARGET",
+        "SET_DEPTH",
         "SET_VIEWPORT",
         "SET_PROJECTION",
         "SET_VIEW",
-        "SET_RENDERTARGET",
-        "SET_DEPTH",
         "CLEAR",
         "RENDER_SCENE",
         "UPDATE_TOOLS", 
@@ -37,7 +38,6 @@ class SceneRenderJobBasic( SceneRenderJobBase ):
         "RENDER_TOOLS", 
         "RESTORE_DEPTH",
         "RESTORE_RENDERTARGET", 
-        "PRESENT_SWAPCHAIN"
     ]
 
     def _ManualInit(self, name = "SceneRenderJobInterior"):
