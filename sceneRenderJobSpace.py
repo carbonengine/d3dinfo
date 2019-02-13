@@ -890,6 +890,11 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         if not self.enabled:
             return
 
+        if self._USE_CPP_POSTPROCESS:
+            step = self.GetStep("FINAL_BLIT")
+            step.quality = self.postProcessingQuality
+            return
+
         if self.postProcessingQuality == 0 or not self._enablePostProcessing:
             self.postProcess.Bloom = False
             self.postProcess.Desaturate = False
@@ -997,7 +1002,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             else:
                 self.AddStep("FINAL_BLIT", trinity.TriStepRunJob(self.postProcess.indispensableRenderJob))
         else:
-            self.AddStep("FINAL_BLIT", trinity.TriStepRenderPostProcess(self.GetScene(), self._GetSourceRTForPostProcessing(), self._GetPostProcessPSData()))
+            self.AddStep("FINAL_BLIT", trinity.TriStepRenderPostProcess(self.GetScene(), self._GetSourceRTForPostProcessing()))
 
         if customDepthStencil is not None:
             self.AddStep("SET_DEPTH", trinity.TriStepPushDepthStencil(customDepthStencil))
