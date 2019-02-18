@@ -713,26 +713,28 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.distortionTexture = None
             self._SetDistortionMap()
 
-        # TAA
-        if self.taaEnabled:
-            # Accumulation buffer
-            key = (id(self), "AccumulationBuffer")
-            self.accumulationBuffer = rtm.GetRenderTargetAL(
-                width, height, 1,
-                blitFormat,
-                key)
-            self.accumulationBuffer.name = "accumulationBuffer"
 
-            # Velocity buffer
-            if self.msaaEnabled:
-                self.velocityTexture = rtm.GetRenderTargetMsaaAL(width, height, trinity.PIXEL_FORMAT.R16G16_FLOAT, msaaType, 0, "VelocityMap")
-                self.velocityTexture.name = "VelocityMapMSAA"
+        if not self._USE_CPP_POSTPROCESS:
+            # TAA
+            if self.taaEnabled:
+                # Accumulation buffer
+                key = (id(self), "AccumulationBuffer")
+                self.accumulationBuffer = rtm.GetRenderTargetAL(
+                    width, height, 1,
+                    blitFormat,
+                    key)
+                self.accumulationBuffer.name = "accumulationBuffer"
+
+                # Velocity buffer
+                if self.msaaEnabled:
+                    self.velocityTexture = rtm.GetRenderTargetMsaaAL(width, height, trinity.PIXEL_FORMAT.R16G16_FLOAT, msaaType, 0, "VelocityMap")
+                    self.velocityTexture.name = "VelocityMapMSAA"
+                else:
+                    self.velocityTexture = rtm.GetRenderTargetAL(width, height, 1, trinity.PIXEL_FORMAT.R16G16_FLOAT, "VelocityMap")
+                    self.velocityTexture.name = "VelocityMap"
             else:
-                self.velocityTexture = rtm.GetRenderTargetAL(width, height, 1, trinity.PIXEL_FORMAT.R16G16_FLOAT, "VelocityMap")
-                self.velocityTexture.name = "VelocityMap"
-        else:
-            self.accumulationBuffer = None
-            self.velocityTexture = None
+                self.accumulationBuffer = None
+                self.velocityTexture = None
 
 
     def _TargetDiffers(self, target, blueType, format, msType=0, width=0, height=0):
@@ -777,6 +779,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         taaEnabled = gfxsettings.IsTAAEnabled(gfxsettings.Get(gfxsettings.GFX_ANTI_ALIASING))
         self.taaEnabled = taaEnabled and _singletons.platform == 'dx11' and trinity.GetShaderModel().endswith("DEPTH") and self.useTAA
+
         # Graphics Settings: Again, avoiding this call would be preferrable, 
         # perhaps a util function in evegraphics
         self.msaaType = self._GetMSAATypeFromQuality(self.aaQuality)
@@ -882,7 +885,16 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._RefreshRenderTargets()
 
         self.ModifyPostProcessForPerformance()
-        self.postProcess.TAA = self.taaEnabled
+        if not self._USE_CPP_POSTPROCESS:
+            self.postProcess.TAA = self.taaEnabled
+        else:
+            scene = self.GetScene()
+            if scene.postprocess:
+                if self.taaEnabled and scene.postprocess.taa is None:
+                    scene.postprocess.taa = trinity.Tr2PPTaaEffect()
+                else:
+                    scene.postprocess.taa = None
+
 
         self.ApplyPerformancePreferencesToScene()
 
@@ -952,12 +964,14 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             scene.msaaSamples = self.msaaType
         else:
             scene.msaaSamples = 1
-        if self.taaEnabled:
-            scene.pixelOffsetScale = self.taaPixelOffset
-            scene.taaSubpixelPattern = self.taaPattern
-        else:
-            scene.pixelOffsetScale = 0
-            scene.taaSubpixelPattern = 0
+
+        if not self._USE_CPP_POSTPROCESS:
+            if self.taaEnabled:
+                scene.pixelOffsetScale = self.taaPixelOffset
+                scene.taaSubpixelPattern = self.taaPattern
+            else:
+                scene.pixelOffsetScale = 0
+                scene.taaSubpixelPattern = 0
         if _singletons.platform == 'dx11' and self.postProcessingQuality == 2:
             scene.nebulaBrightnessOverride = 0.3
         else:
