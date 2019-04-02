@@ -518,7 +518,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.ApplyPerformancePreferencesToScene()
 
     def _SetTaaToRenderJobState(self):
-        self.postProcess.TAA = self.taaEnabled
+        if hasattr(self.postProcess, "TAA"):
+            self.postProcess.TAA = self.taaEnabled
 
     def _CreateBasicRenderSteps(self):
         # Scene update and render
