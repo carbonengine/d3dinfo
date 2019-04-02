@@ -503,6 +503,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         if getattr(scene, "postProcessPath", "") != "":
             self.postProcess.LoadOverriddenParameters(scene.postProcessPath)
 
+        self._SetTaaToRenderJobState()
         self.ModifyPostProcessForPerformance()
 
         self.SetStepAttr("UPDATE_SCENE", 'object', scene)
@@ -515,6 +516,9 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._SetBackgroundScene(scene)
 
         self.ApplyPerformancePreferencesToScene()
+
+    def _SetTaaToRenderJobState(self):
+        self.postProcess.TAA = self.taaEnabled
 
     def _CreateBasicRenderSteps(self):
         # Scene update and render
