@@ -946,7 +946,11 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._SetSecondaryLighting()
         trinity.settings.SetValue('eveSpaceSceneDynamicLighting',
                                   trinity.GetShaderModel().endswith("DEPTH") and _singletons.platform == 'dx11')
-        isHighQuality = gfxsettings.Get(gfxsettings.GFX_SHADER_QUALITY) == gfxsettings.SHADER_MODEL_HIGH
+
+        try:
+            isHighQuality = gfxsettings.Get(gfxsettings.GFX_SHADER_QUALITY) == gfxsettings.SHADER_MODEL_HIGH
+        except gfxsettings.UninitializedSettingsGroupError:
+            isHighQuality = True
 
         scene = self.GetScene()
         if scene is None:
