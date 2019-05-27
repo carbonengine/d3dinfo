@@ -41,7 +41,6 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         "CLEAR",
         "SET_PROJECTION",
         "SET_VIEW",
-        "SHADOW",
         "SCATTER",
         "RENDER_BACKDROP",
         "RENDER_SCENE",
@@ -60,7 +59,6 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         """
         # in general most of these use weakrefs to prevent circular references
         self.scatterEnabled = False
-        self.shadowEnabled = False
         self.sculptingEnabled = False
 
         self.customBackBuffer = None
@@ -153,13 +151,11 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
     def Enable(self, schedule=True):
         SceneRenderJobBase.Enable(self, schedule)
         self.EnableScatter(self.scatterEnabled)
-        self.EnableShadows(self.shadowEnabled)
         self.EnableSculpting(self.sculptingEnabled)
 
     def Disable(self):
         SceneRenderJobBase.Disable(self)
         self.EnableScatter(self.scatterEnabled)
-        self.EnableShadows(self.shadowEnabled)
         self.EnableSculpting(self.sculptingEnabled)
 
     def EnableScatter(self, isEnabled):
@@ -169,14 +165,6 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             self.AddStep("SCATTER", paperDoll.SkinLightmapRenderer.CreateScatterStep(self, self.GetScene(), False))
         else:
             self.RemoveStep("SCATTER")
-
-    def EnableShadows(self, isEnabled):
-        import paperDoll
-        self.shadowEnabled = isEnabled
-        if self.enabled and isEnabled:
-            self.AddStep("SHADOW", paperDoll.SkinSpotLightShadows.CreateShadowStep(self, False))
-        else:
-            self.RemoveStep("SHADOW")
 
     def EnableSculpting(self, isEnabled):
         import paperDoll
