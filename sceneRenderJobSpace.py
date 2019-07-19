@@ -8,14 +8,13 @@ from .renderJob import CreateRenderJob
 from .sceneRenderJobBase import SceneRenderJobBase
 from .renderJobUtils import renderTargetManager as rtm
 from . import evePostProcess
-from .postprocess import PostProcess
 
-DEFAULT_POSTPROCESS_PATH = 'res:/fisfx/postprocess/eve.yaml'
+DEFAULT_POSTPROCESS_PATH = 'res:/fisfx/postprocess/DefaultPostProcessingSettings.red'
 
 logger = logging.getLogger(__name__)
 
 
-def CreateSceneRenderJobSpace(name = None, stageKey = None):
+def CreateSceneRenderJobSpace(name=None, stageKey=None):
     """
     We can't use __init__ on a decorated class, so we provide a creation function that does it for us
     """
@@ -27,11 +26,11 @@ def CreateSceneRenderJobSpace(name = None, stageKey = None):
 
     newRJ.SetMultiViewStage(stageKey)
     return newRJ
-        
+
 
 class SceneRenderJobSpace(SceneRenderJobBase):
     """
-    This is a renderjob manager for creating and managing the renderjob to forwards 
+    This is a renderjob manager for creating and managing the renderjob to forwards
     render the eve space scene.
     """
 
@@ -67,11 +66,11 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         "SET_UI_VIEW",
         "RENDER_3D_UI",
         "RENDER_DEBUG",
-        "UPDATE_TOOLS", 
-        "RENDER_PROXY", 
+        "UPDATE_TOOLS",
+        "RENDER_PROXY",
         "RENDER_INFO",
         "RENDER_VISUAL",
-        "RENDER_TOOLS",   
+        "RENDER_TOOLS",
         "SET_FINAL_RT",
         "RESTORE_DEPTH",
         "SET_PERFRAME_DATA",
@@ -85,10 +84,10 @@ class SceneRenderJobSpace(SceneRenderJobBase):
     multiViewStages = []
 
     visualizations = []
-    
+
     renderTargetList = []
-    
-    def _ManualInit(self, name = "SceneRenderJobSpace"):
+
+    def _ManualInit(self, name="SceneRenderJobSpace"):
         """
         Decorated classes cannot use a normal init function, so this must be called manually
         This version is called from ManualInit on SceneRenderJobBase
@@ -99,7 +98,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         # The active camera, this ref might be unneccessary, keep in mind failure to reset
         self.camera = None
-        
+
         # All the surfaces needed for different settings
         self.customBackBuffer = None
         self.customDepthStencil = None
@@ -108,13 +107,13 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.distortionTexture = None
         self.velocityTexture = None
         self.accumulationBuffer = None
-        
+
         # The shadow map
         self.shadowMap = None
-        
+
         # A ref to the ui
         self.ui = None
-        
+
         # Settings variables, do we really need to store these? don't think so tbh
         self.hdrEnabled = False
         self.usePostProcessing = False
@@ -131,7 +130,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         self.distortionEffectsEnabled = False
         self.secondaryLighting = False
-        
+
         self.taaEnabled = False
         self.taaPixelOffset = 0.5
         self.taaPattern = 3
@@ -143,8 +142,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.prepared = False
 
         self._enablePostProcessing = True
-        self.postProcess = PostProcess()
-        self.postProcess.Load(DEFAULT_POSTPROCESS_PATH)
+
         self.distortionJob = evePostProcess.EvePostProcessingJob()
         self.backgroundDistortionJob = evePostProcess.EvePostProcessingJob()
 
@@ -159,38 +157,24 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         self.useImpostors = True
 
-        self._USE_CPP_POSTPROCESS = False
-
-    def ToggleNewPostProcess(self):
-        self._USE_CPP_POSTPROCESS = not self._USE_CPP_POSTPROCESS
-        if self._USE_CPP_POSTPROCESS:
-            print "now using new post process"
-        else:
-            print "now using old post process"
-        self._RefreshRenderTargets()
-
     def Enable(self, schedule=True):
         SceneRenderJobBase.Enable(self, schedule)
         self.SetSettingsBasedOnPerformancePreferences()
-
 
     def SuspendRendering(self):
         SceneRenderJobBase.UnscheduleRecurring(self)
         self.scheduled = False
         self.EnableGpuEmission(False)
 
-
     def Start(self):
         SceneRenderJobBase.Start(self)
         self.EnableGpuEmission(True)
         self.ScheduleUpdateJob()
 
-
     def ScheduleUpdateJob(self):
         if self.updateJob is not None and not self.updateJob.scheduled:
             self.updateJob.ScheduleUpdate()
             self.updateJob.scheduled = True
-
 
     def EnableGpuEmission(self, enable):
         if not self.gpuParticlesEnabled:
@@ -203,23 +187,19 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         if scene.gpuParticleSystem is not None:
             scene.gpuParticleSystem.enableEmit = enable
 
-
     def Disable(self):
         SceneRenderJobBase.Disable(self)
         self.UnscheduleUpdateJob()
-
 
     def UnscheduleUpdateJob(self):
         if self.updateJob is not None and self.updateJob.scheduled:
             self.updateJob.UnscheduleUpdate()
             self.updateJob.scheduled = False
 
-
     def UnscheduleRecurring(self, scheduledRecurring=None):
         SceneRenderJobBase.UnscheduleRecurring(self, scheduledRecurring)
         self.UnscheduleUpdateJob()
 
-  
     def SetClientToolsScene(self, scene):
         """
         A function that sets a primitive scene for rendering client tools (for the
@@ -233,7 +213,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.AddStep("UPDATE_TOOLS", trinity.TriStepUpdate(scene))
         self.AddStep("RENDER_TOOLS", trinity.TriStepRenderScene(scene))
 
-
     def GetClientToolsScene(self):
         """
         A function that gets the client tools scene (for the Dungeon Editor)
@@ -242,7 +221,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             return None
         else:
             return self.clientToolsScene.object
-        
+
     def SetCameraView(self, view):
         super(SceneRenderJobSpace, self).SetCameraView(view)
         self._SetUpdateStep(trinity.TriStepSetView(view), "SET_VIEW")
@@ -291,14 +270,12 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.AddStep("SET_UI_PROJECTION", trinity.TriStepSetProjection(projection))
             self.AddStep("SET_UPDATE_PROJECTION", trinity.TriStepSetProjection(projection))
             self._SetUpdateStep(trinity.TriStepSetProjection(projection), "SET_PROJECTION")
-    
 
     def SetActiveScene(self, scene, key=None):
         """
         This function sets the scene and the scene key associated with it
         """
         self.SetScene(scene)
-
 
     def _SetDepthMap(self):
         """
@@ -308,13 +285,12 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             return
         if self.GetScene() is None:
             return
-            
+
         if hasattr(self.GetScene(), "depthTexture"):
             if self.doDepthPass:
                 self.GetScene().depthTexture = self.depthTexture
             else:
                 self.GetScene().depthTexture = None
-
 
     def _SetDistortionMap(self):
         """
@@ -324,10 +300,9 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             return
         if self.GetScene() is None:
             return
-            
+
         if hasattr(self.GetScene(), "distortionTexture"):
             self.GetScene().distortionTexture = self.distortionTexture
-
 
     def _SetVelocityMap(self):
         """
@@ -341,7 +316,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         if hasattr(self.GetScene(), "velocityMap"):
             self.GetScene().velocityMap = self.velocityTexture
 
-
     def _SetShadowMap(self):
         """
         Set shadow map to the scene
@@ -349,8 +323,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         scene = self.GetScene()
         if scene is None:
             return
-            
-        # set it to scene or null it 
+
+        # set it to scene or null it
         if self.shadowQuality > 1:
             scene.shadowMap = self.shadowMap
             scene.shadowFadeThreshold = 180
@@ -378,24 +352,21 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         """ Force a special depth pass under SM_3_0_DEPTH """
         self.forceDepthPass = enabled
 
-
     def _RefreshPostProcessingJob(self, job, enabled):
         if enabled:
-            job.Prepare(self._GetSourceRTForPostProcessing(), self.blitTexture, destination=self._GetDestinationRTForPostProcessing())
+            job.Prepare(self._GetSourceRTForPostProcessing(), self.blitTexture,
+                        destination=self._GetDestinationRTForPostProcessing())
             job.CreateSteps()
         else:
             job.Release()
-
 
     def _GetSourceRTForPostProcessing(self):
         if self.customBackBuffer is not None:
             return self.customBackBuffer
         return self.GetBackBufferRenderTarget()
 
-
     def _GetDestinationRTForPostProcessing(self):
         return None
-
 
     def _DoFormatConversionStep(self, hdrTexture, msaaTexture=None):
         """
@@ -420,10 +391,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         job.steps.append(trinity.TriStepRenderTexture(hdrTexture))
         return trinity.TriStepRunJob(job)
 
-
     def _GetRTForDepthPass(self):
         return self.GetBackBufferRenderTarget()
-
 
     def _CreateDepthPass(self):
         rj = trinity.TriRenderJob()
@@ -444,7 +413,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             rj.steps.append(trinity.TriStepPopViewport())
 
         self.AddStep("RENDER_DEPTH_PASS", trinity.TriStepRunJob(rj))
-
 
     def _FindUpdateStep(self, key):
         for each in self.updateJob.steps:
@@ -483,16 +451,16 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         """
         Sets a scene into the render job
         """
-        self.postProcess.RestoreOverriddenParameters()
-
-        if getattr(scene, "postProcessPath", "") != "":
-            self.postProcess.LoadOverriddenParameters(scene.postProcessPath)
+        if scene is not None and scene.postprocess is None and hasattr(scene, "postprocess"):
+            scene.postprocess = trinity.Load(DEFAULT_POSTPROCESS_PATH)
 
         self._SetTaaToRenderJobState()
         self.ModifyPostProcessForPerformance()
 
+        self.SetStepAttr("FINAL_BLIT", 'scene', scene)
+
         self.SetStepAttr("UPDATE_SCENE", 'object', scene)
-        self.SetStepAttr("RENDER_MAIN_PASS", 'scene', scene) 
+        self.SetStepAttr("RENDER_MAIN_PASS", 'scene', scene)
         self.SetStepAttr("BEGIN_RENDER", 'scene', scene)
         self.SetStepAttr("END_RENDERING", 'scene', scene)
         self.SetStepAttr("SET_PERFRAME_DATA", 'scene', scene)
@@ -504,9 +472,13 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         self.ApplyPerformancePreferencesToScene()
 
+        if scene is not None and (self.customBackBuffer is not None or self.taaEnabled):
+            self.AddStep("FINAL_BLIT", trinity.TriStepRenderPostProcess(scene, self._GetSourceRTForPostProcessing()))
+
     def _SetTaaToRenderJobState(self):
-        if hasattr(self.postProcess, "TAA"):
-            self.postProcess.TAA = self.taaEnabled
+        scene = self.GetScene()
+        if scene is not None and scene.postprocess is not None and self.taaEnabled:
+            scene.postprocess.taa = trinity.Tr2PPTaaEffect()
 
     def _CreateBasicRenderSteps(self):
         # Scene update and render
@@ -529,14 +501,12 @@ class SceneRenderJobSpace(SceneRenderJobBase):
                                                scene,
                                                trinity.TriStepRunJob(self.backgroundDistortionJob)))
 
-
         # We need the standard clear
-        self.AddStep("CLEAR", trinity.TriStepClear((0.0,0.0,0.0,0.0), 0.0))
-        
+        self.AddStep("CLEAR", trinity.TriStepClear((0.0, 0.0, 0.0, 0.0), 0.0))
+
         # Setup tools steps if we have a tools scene
         if self.clientToolsScene is not None:
             self.SetClientToolsScene(self.clientToolsScene.object)
-
 
     def DoReleaseResources(self, level):
         """
@@ -547,11 +517,11 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.hdrEnabled = False
         self.usePostProcessing = False
         self.shadowQuality = 0
-        
+
         self.shadowMap = None
-        
+
         self.depthTexture = None
-                               
+
         self.renderTargetList = None
         self.customBackBuffer = None
         self.customDepthStencil = None
@@ -570,11 +540,9 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         self._RefreshRenderTargets()
 
-
     def NotifyResourceCreationFailed(self):
         import localization
         eve.Message("CustomError", {"error": localization.GetByLabel("UI/Shared/VideoMemoryError")})
-
 
     def _GetSettings(self):
         """
@@ -588,7 +556,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         currentSettings = {}
 
         currentSettings["postProcessingQuality"] = self.overrideSettings.get(gfxsettings.GFX_POST_PROCESSING_QUALITY,
-                                                                             gfxsettings.Get(gfxsettings.GFX_POST_PROCESSING_QUALITY))
+                                                                             gfxsettings.Get(
+                                                                                 gfxsettings.GFX_POST_PROCESSING_QUALITY))
         currentSettings["shadowQuality"] = gfxsettings.Get(gfxsettings.GFX_SHADOW_QUALITY)
         currentSettings["aaQuality"] = gfxsettings.Get(gfxsettings.GFX_ANTI_ALIASING)
         try:
@@ -597,7 +566,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             currentSettings["gpuParticles"] = gfxsettings.GetDefault(gfxsettings.UI_GPU_PARTICLES_ENABLED)
 
         return currentSettings
-
 
     def ApplyBaseSettings(self):
         currentSettings = self._GetSettings()
@@ -614,7 +582,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.useDepth = isDepth or _singletons.platformInfo.GetStaticCap(trinity.PlatformStaticCap.MSAA_SAMPLE)
 
         trinity.settings.SetValue('eveSpaceSceneDynamicLighting',
-                                  trinity.GetShaderModel().endswith("DEPTH") and _singletons.platformInfo.GetStaticCap(trinity.PlatformStaticCap.COMPUTE))
+                                  trinity.GetShaderModel().endswith("DEPTH") and _singletons.platformInfo.GetStaticCap(
+                                      trinity.PlatformStaticCap.COMPUTE))
 
         # Apply settings override, usually used by special case rendering(like the photo service)
         if "bbFormat" in self.overrideSettings:
@@ -622,17 +591,14 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         if "aaQuality" in self.overrideSettings:
             self.aaQuality = self.overrideSettings["aaQuality"]
 
-
     def OverrideSettings(self, key, value):
         self.overrideSettings[key] = value
-
 
     def StopOverrideSettings(self, key):
         try:
             del self.overrideSettings[key]
         except KeyError:
             pass
-
 
     def _CreateRenderTargets(self):
         if not self.prepared:
@@ -651,14 +617,17 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             customFormat = self.bbFormat
         # 1 is the default Tr2RenderTarget multiSampleType for non-multisampled render targets.
         msaaType = self.msaaType if self.msaaEnabled else 1
-        if _singletons.device.SupportsDepthStencilFormat(trinity.DEPTH_STENCIL_FORMAT.D32F) and _singletons.platformInfo.GetStaticCap(trinity.PlatformStaticCap.MSAA_SAMPLE):
+        if _singletons.device.SupportsDepthStencilFormat(
+                trinity.DEPTH_STENCIL_FORMAT.D32F) and _singletons.platformInfo.GetStaticCap(
+                trinity.PlatformStaticCap.MSAA_SAMPLE):
             dsFormatAL = trinity.DEPTH_STENCIL_FORMAT.D32F
         elif self.useDepth and msaaType <= 1:
             dsFormatAL = trinity.DEPTH_STENCIL_FORMAT.READABLE
         else:
             dsFormatAL = trinity.DEPTH_STENCIL_FORMAT.D24S8
 
-        if useCustomBackBuffer and self._TargetDiffers(self.customBackBuffer, "trinity.Tr2RenderTarget", customFormat, msaaType, width, height):
+        if useCustomBackBuffer and self._TargetDiffers(self.customBackBuffer, "trinity.Tr2RenderTarget", customFormat,
+                                                       msaaType, width, height):
             if self.msaaEnabled:
                 self.customBackBuffer = rtm.GetRenderTargetMsaaAL(width, height, customFormat, msaaType, 0)
             else:
@@ -667,7 +636,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
                 self.customBackBuffer.name = 'sceneRenderJobSpace.customBackBuffer'
         elif not useCustomBackBuffer:
             self.customBackBuffer = None
-        
+
         # customDepthStencil
         self.customDepthStencil = rtm.GetDepthStencilAL(width, height, dsFormatAL, msaaType)
 
@@ -687,7 +656,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         useBlitTexture = (self.usePostProcessing or self.distortionEffectsEnabled or self.taaEnabled)
         useBlitTexture = useBlitTexture or (self.hdrEnabled and self.msaaEnabled)
         blitFormat = customFormat
-        if useBlitTexture and self._TargetDiffers(self.blitTexture, "trinity.Tr2RenderTarget", blitFormat, 0, width, height):
+        if useBlitTexture and self._TargetDiffers(self.blitTexture, "trinity.Tr2RenderTarget", blitFormat, 0, width,
+                                                  height):
             self.blitTexture = rtm.GetRenderTargetAL(width, height, 1, blitFormat, index=1)
             if self.blitTexture is not None:
                 self.blitTexture.name = 'sceneRenderJobSpace.blitTexture'
@@ -710,34 +680,10 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.distortionTexture = None
             self._SetDistortionMap()
 
-
-        if not self._USE_CPP_POSTPROCESS:
-            # TAA
-            if self.taaEnabled:
-                # Accumulation buffer
-                key = (id(self), "AccumulationBuffer")
-                self.accumulationBuffer = rtm.GetRenderTargetAL(
-                    width, height, 1,
-                    blitFormat,
-                    key)
-                self.accumulationBuffer.name = "accumulationBuffer"
-
-                # Velocity buffer
-                if self.msaaEnabled:
-                    self.velocityTexture = rtm.GetRenderTargetMsaaAL(width, height, trinity.PIXEL_FORMAT.R16G16_FLOAT, msaaType, 0, "VelocityMap")
-                    self.velocityTexture.name = "VelocityMapMSAA"
-                else:
-                    self.velocityTexture = rtm.GetRenderTargetAL(width, height, 1, trinity.PIXEL_FORMAT.R16G16_FLOAT, "VelocityMap")
-                    self.velocityTexture.name = "VelocityMap"
-            else:
-                self.accumulationBuffer = None
-                self.velocityTexture = None
-
-
     def _TargetDiffers(self, target, blueType, format, msType=0, width=0, height=0):
         if target is None:
             return True
-        
+
         if blueType != target.__bluetype__:
             return True
 
@@ -756,41 +702,37 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         return False
 
-
     def _RefreshRenderTargets(self):
-        self.renderTargetList = ( 
-                    blue.BluePythonWeakRef(self.customBackBuffer), 
-                    blue.BluePythonWeakRef(self.customDepthStencil), 
-                    blue.BluePythonWeakRef(self.depthTexture),
-                    blue.BluePythonWeakRef(self.blitTexture),
-                    blue.BluePythonWeakRef(self.distortionTexture),
-                    blue.BluePythonWeakRef(self.accumulationBuffer),
-                )
+        self.renderTargetList = (
+            blue.BluePythonWeakRef(self.customBackBuffer),
+            blue.BluePythonWeakRef(self.customDepthStencil),
+            blue.BluePythonWeakRef(self.depthTexture),
+            blue.BluePythonWeakRef(self.blitTexture),
+            blue.BluePythonWeakRef(self.distortionTexture),
+            blue.BluePythonWeakRef(self.accumulationBuffer),
+        )
         renderTargets = (x.object for x in self.renderTargetList)
         self.SetRenderTargets(*renderTargets)
-
 
     def _RefreshAntiAliasing(self):
         if "aaQuality" not in self.overrideSettings:
             self.msaaQuality = self._GetMSAAQualityFromAAQuality(gfxsettings.Get(gfxsettings.GFX_ANTI_ALIASING))
 
         taaEnabled = gfxsettings.IsTAAEnabled(gfxsettings.Get(gfxsettings.GFX_ANTI_ALIASING))
-        self.taaEnabled = taaEnabled and _singletons.platformInfo.GetStaticCap(trinity.PlatformStaticCap.TAA) and trinity.GetShaderModel().endswith("DEPTH") and self.useTAA
+        self.taaEnabled = taaEnabled and _singletons.platformInfo.GetStaticCap(
+            trinity.PlatformStaticCap.TAA) and trinity.GetShaderModel().endswith("DEPTH") and self.useTAA
 
-        # Graphics Settings: Again, avoiding this call would be preferrable, 
+        # Graphics Settings: Again, avoiding this call would be preferrable,
         # perhaps a util function in evegraphics
         self.msaaType = self._GetMSAATypeFromQuality(self.aaQuality)
         self.EnableMSAA(self.antiAliasingEnabled)
 
-
     def EnableDistortionEffects(self, enable):
         self.distortionEffectsEnabled = enable
-
 
     def EnableAntiAliasing(self, enable):
         self.antiAliasingEnabled = enable
         self._RefreshAntiAliasing()
-
 
     def EnableMSAA(self, enable):
         self.msaaEnabled = enable
@@ -804,10 +746,9 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._CreateRenderTargets()
         self._RefreshRenderTargets()
 
-
     def DoPrepareResources(self):
         """
-        This function is called when the device is restored. 
+        This function is called when the device is restored.
         This function may raise exceptions attempting to create resources!
         """
         if not self.enabled or not self.canCreateRenderTargets:
@@ -821,7 +762,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.DoReleaseResources(1)
             self._RefreshRenderTargets()
             uthread.new(self.NotifyResourceCreationFailed)
-
 
     def _GetMSAAQualityFromAAQuality(self, aaQuality):
         qual = gfxsettings.AA_QUALITY_MSAA_HIGH
@@ -842,7 +782,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             pass
 
         return msaaType
-
 
     def _SetSettingsBasedOnPerformancePreferences(self):
         self.msaaQuality = self._GetMSAAQualityFromAAQuality(self.aaQuality)
@@ -866,7 +805,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         # Populate derived values from base settings
         self._SetSettingsBasedOnPerformancePreferences()
-        
+
         self.usePostProcessing = self.postProcessingQuality > 0
         if _singletons.platformInfo.GetStaticCap(trinity.PlatformStaticCap.MSAA_SAMPLE):
             self.doDepthPass = (trinity.GetShaderModel() != 'SM_3_0_LO') or self.forceDepthPass
@@ -882,53 +821,17 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._RefreshRenderTargets()
 
         self.ModifyPostProcessForPerformance()
-        if not self._USE_CPP_POSTPROCESS:
-            self.postProcess.TAA = self.taaEnabled
 
         self.ApplyPerformancePreferencesToScene()
 
     def ModifyPostProcessForPerformance(self):
         if not self.enabled:
             return
-
-        if self._USE_CPP_POSTPROCESS:
-            step = self.GetStep("FINAL_BLIT")
-            step.quality = self.postProcessingQuality
+        step = self.GetStep("FINAL_BLIT")
+        if step is None:
             return
-
-        if self.postProcessingQuality == 0 or not self._enablePostProcessing:
-            self.postProcess.Bloom = False
-            self.postProcess.Desaturate = False
-            self.postProcess.FilmGrain = False
-            self.postProcess.FogEnabled = False
-            self.postProcess.Lut = False
-            self.postProcess.GodRays = False
-            self.postProcess.DynamicExposure = False
-            self.postProcess.Tonemapping = False
-            self.postProcess.Vignette = False
-            self.postProcess.FinalBlit = not (self.taaEnabled and self.customBackBuffer is None)
-        elif self.postProcessingQuality == 1:
-            self.postProcess.Bloom = True
-            self.postProcess.Desaturate = True
-            self.postProcess.FilmGrain = False
-            self.postProcess.FogEnabled = False
-            self.postProcess.Lut = True
-            self.postProcess.GodRays = False
-            self.postProcess.DynamicExposure = False
-            self.postProcess.Tonemapping = False
-            self.postProcess.Vignette = True
-            self.postProcess.FinalBlit = True
-        elif self.postProcessingQuality == 2:
-            self.postProcess.Bloom = True
-            self.postProcess.Desaturate = True
-            self.postProcess.FilmGrain = True
-            self.postProcess.FogEnabled = True
-            self.postProcess.Lut = True
-            self.postProcess.GodRays = True
-            self.postProcess.DynamicExposure = _singletons.platformInfo.GetStaticCap(trinity.PlatformStaticCap.COMPUTE)
-            self.postProcess.Tonemapping = _singletons.platformInfo.GetStaticCap(trinity.PlatformStaticCap.COMPUTE)
-            self.postProcess.Vignette = True
-            self.postProcess.FinalBlit = True
+        step.quality = self.postProcessingQuality
+        step.enabled = step.quality != 0
 
     def ApplyPerformancePreferencesToScene(self):
         self._SetShadowMap()
@@ -937,7 +840,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._SetVelocityMap()
         self._SetSecondaryLighting()
         trinity.settings.SetValue('eveSpaceSceneDynamicLighting',
-                                  trinity.GetShaderModel().endswith("DEPTH") and _singletons.platformInfo.GetStaticCap(trinity.PlatformStaticCap.COMPUTE))
+                                  trinity.GetShaderModel().endswith("DEPTH") and _singletons.platformInfo.GetStaticCap(
+                                      trinity.PlatformStaticCap.COMPUTE))
 
         try:
             isHighQuality = gfxsettings.Get(gfxsettings.GFX_SHADER_QUALITY) == gfxsettings.SHADER_MODEL_HIGH
@@ -946,7 +850,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         scene = self.GetScene()
         if scene is None:
-            self.postProcess.SetFramePSData(None)
             return
         if self.useImpostors:
             scene.impostorManager = trinity.Tr2ImpostorManager()
@@ -959,22 +862,12 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             scene.msaaSamples = self.msaaType
         else:
             scene.msaaSamples = 1
-
-        if not self._USE_CPP_POSTPROCESS:
-            if self.taaEnabled:
-                scene.pixelOffsetScale = self.taaPixelOffset
-                scene.taaSubpixelPattern = self.taaPattern
-            else:
-                scene.pixelOffsetScale = 0
-                scene.taaSubpixelPattern = 0
-        if _singletons.platformInfo.GetStaticCap(trinity.PlatformStaticCap.COMPUTE) and self.postProcessingQuality == 2:
+        if _singletons.platform == 'dx11' and self.postProcessingQuality == 2:
             scene.nebulaBrightnessOverride = 0.3
         else:
             scene.nebulaBrightnessOverride = 0.0
 
         scene.reflectionProbe = trinity.Tr2ReflectionProbe() if isHighQuality else None
-
-        self.postProcess.SetFramePSData(scene.GetPostProcessPSBuffer())
 
     def _GetPostProcessPSData(self):
         scene = self.GetScene()
@@ -985,8 +878,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
     def SetMultiViewStage(self, stageKey):
         self.currentMultiViewStageKey = stageKey
 
-
-    def SetRenderTargets(self, customBackBuffer, customDepthStencil, depthTexture, blitTexture, distortionTexture, accumulationBuffer):
+    def SetRenderTargets(self, customBackBuffer, customDepthStencil, depthTexture, blitTexture, distortionTexture,
+                         accumulationBuffer):
         """
         Set the required buffers on all the the renderjob steps.
         If any of these steps are missing, they will obviously not get set.
@@ -999,7 +892,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         else:
             self.RemoveStep("SET_SWAPCHAIN_RT")
             self.RemoveStep("SET_SWAPCHAIN_DEPTH")
-            
+
         if customBackBuffer is not None:
             self.AddStep("SET_CUSTOM_RT", trinity.TriStepPushRenderTarget(customBackBuffer))
             self.AddStep("SET_FINAL_RT", trinity.TriStepPopRenderTarget())
@@ -1007,21 +900,17 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.RemoveStep("SET_CUSTOM_RT")
             self.RemoveStep("SET_FINAL_RT")
 
-        # replace with a TriStepRenderPostProcess
-        if not self._USE_CPP_POSTPROCESS:
-            if customBackBuffer is not None or self.taaEnabled:
-                self.AddStep("FINAL_BLIT", trinity.TriStepRunJob(self.postProcess.renderJob))
-            else:
-                self.AddStep("FINAL_BLIT", trinity.TriStepRunJob(self.postProcess.indispensableRenderJob))
-        elif customBackBuffer is not None or self.taaEnabled:
+        if customBackBuffer is not None or self.taaEnabled:
             scene = self.GetScene()
-            if scene.postprocess:
-                if self.taaEnabled and scene.postprocess.taa is None:
-                    scene.postprocess.taa = trinity.Tr2PPTaaEffect()
-                else:
-                    scene.postprocess.taa = None
+            if scene is not None:
+                if scene.postprocess:
+                    if self.taaEnabled and scene.postprocess.taa is None:
+                        scene.postprocess.taa = trinity.Tr2PPTaaEffect()
+                    else:
+                        scene.postprocess.taa = None
 
-            self.AddStep("FINAL_BLIT", trinity.TriStepRenderPostProcess(self.GetScene(), self._GetSourceRTForPostProcessing()))
+                self.AddStep("FINAL_BLIT",
+                             trinity.TriStepRenderPostProcess(self.GetScene(), self._GetSourceRTForPostProcessing()))
 
         if customDepthStencil is not None:
             self.AddStep("SET_DEPTH", trinity.TriStepPushDepthStencil(customDepthStencil))
@@ -1039,16 +928,12 @@ class SceneRenderJobSpace(SceneRenderJobBase):
                 self.AddStep("SET_VAR_DEPTH_MSAA", trinity.TriStepSetVariableStore("DepthMapMsaa", depthTexture))
             else:
                 self.AddStep("SET_VAR_DEPTH", trinity.TriStepSetVariableStore("DepthMap", depthTexture))
-                self.AddStep("SET_VAR_DEPTH_MSAA", trinity.TriStepSetVariableStore("DepthMapMsaa", trinity.TriTextureRes()))
+                self.AddStep("SET_VAR_DEPTH_MSAA",
+                             trinity.TriStepSetVariableStore("DepthMapMsaa", trinity.TriTextureRes()))
         else:
             self.RemoveStep("SET_VAR_DEPTH")
             self.RemoveStep("SET_VAR_DEPTH_MSAA")
 
-        self.postProcess.SetSource(self._GetSourceRTForPostProcessing())
-        self.postProcess.SetDest(self._GetDestinationRTForPostProcessing())
-        self.postProcess.SetVelocity(self.velocityTexture)
-        self.postProcess.SetAccumulation(self.accumulationBuffer)
-        self.postProcess.SetFramePSData(self._GetPostProcessPSData())
         self._RefreshPostProcessingJob(self.distortionJob, self.distortionEffectsEnabled and self.prepared)
         self._RefreshPostProcessingJob(self.backgroundDistortionJob, self.distortionEffectsEnabled and self.prepared)
 
@@ -1066,7 +951,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         self._CreateDepthPass()
 
-    def GetRenderTargets(self):   
+    def GetRenderTargets(self):
         return self.renderTargetList
 
     def EnableSceneUpdate(self, isEnabled):
@@ -1083,6 +968,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
                 self.AddStep("UPDATE_SCENE", trinity.TriStepUpdate(self.GetScene()))
             else:
                 self.RemoveStep("UPDATE_SCENE")
-            
-    def EnableVisibilityQuery( self, isEnabled ):
+
+    def EnableVisibilityQuery(self, isEnabled):
         pass
