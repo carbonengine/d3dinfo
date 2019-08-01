@@ -718,7 +718,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         if "aaQuality" not in self.overrideSettings:
             self.msaaQuality = self._GetMSAAQualityFromAAQuality(gfxsettings.Get(gfxsettings.GFX_ANTI_ALIASING))
 
-        taaEnabled = gfxsettings.IsTAAEnabled(gfxsettings.Get(gfxsettings.GFX_ANTI_ALIASING))
+        taaEnabled = gfxsettings.IsTAAEnabled(gfxsettings.Get(gfxsettings.GFX_ANTI_ALIASING) and self.postProcessingQuality > 0)
         self.taaEnabled = taaEnabled and _singletons.platformInfo.GetStaticCap(
             trinity.PlatformStaticCap.TAA) and trinity.GetShaderModel().endswith("DEPTH") and self.useTAA
 
@@ -831,7 +831,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         if step is None:
             return
         step.quality = self.postProcessingQuality
-        step.enabled = step.quality != 0
+        step.enabled = step.quality != 0 or self.antiAliasingEnabled
 
     def ApplyPerformancePreferencesToScene(self):
         self._SetShadowMap()
