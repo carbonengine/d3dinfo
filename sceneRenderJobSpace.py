@@ -473,7 +473,9 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.ApplyPerformancePreferencesToScene()
 
         if scene is not None and (self.customBackBuffer is not None or self.taaEnabled):
-            self.AddStep("FINAL_BLIT", trinity.TriStepRenderPostProcess(scene, self._GetSourceRTForPostProcessing()))
+            finalBlitStep = self.AddStep("FINAL_BLIT", trinity.TriStepRenderPostProcess(scene, self._GetSourceRTForPostProcessing()))
+            finalBlitStep.quality = self.postProcessingQuality
+
 
     def _SetTaaToRenderJobState(self):
         scene = self.GetScene()
