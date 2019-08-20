@@ -9,7 +9,7 @@ from .sceneRenderJobBase import SceneRenderJobBase
 from .renderJobUtils import renderTargetManager as rtm
 from . import evePostProcess
 
-DEFAULT_POSTPROCESS_PATH = 'res:/fisfx/postprocess/DefaultPostProcessingSettings.red'
+DEFAULT_POSTPROCESS_PATH = 'res:/dx9/postprocess/DefaultPostProcessingSettings.red'
 
 logger = logging.getLogger(__name__)
 
