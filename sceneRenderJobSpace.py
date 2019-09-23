@@ -864,7 +864,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             scene.msaaSamples = self.msaaType
         else:
             scene.msaaSamples = 1
-        if _singletons.platform == 'dx11' and self.postProcessingQuality == 2:
+        if _singletons.platformInfo.GetStaticCap(trinity.PlatformStaticCap.COMPUTE) and self.postProcessingQuality == 2:
             scene.nebulaBrightnessOverride = 0.3
         else:
             scene.nebulaBrightnessOverride = 0.0
@@ -970,6 +970,3 @@ class SceneRenderJobSpace(SceneRenderJobBase):
                 self.AddStep("UPDATE_SCENE", trinity.TriStepUpdate(self.GetScene()))
             else:
                 self.RemoveStep("UPDATE_SCENE")
-
-    def EnableVisibilityQuery(self, isEnabled):
-        pass

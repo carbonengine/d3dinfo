@@ -37,9 +37,30 @@ def IsD3D11Valid():
     """
     if not d3dinfo:
         return True
-        
+
     isOK = False
     d3d = d3dinfo.D3D11Info()
+    try:
+        d3d.InitializeD3D()
+        adapterCount = d3d.GetAdapterCount()
+        if adapterCount > 0:
+            isOK = True
+        d3d.ShutdownD3D()
+    except RuntimeError:
+        pass
+
+    return isOK
+
+
+def IsD3D12Valid():
+    """
+    Returns True if Direct3D12 is available.
+    """
+    if not d3dinfo:
+        return True
+
+    isOK = False
+    d3d = d3dinfo.D3D12Info()
     try:
         d3d.InitializeD3D()
         adapterCount = d3d.GetAdapterCount()
@@ -67,6 +88,9 @@ def GetAvailablePlatforms():
 
         if IsD3D11Valid():
             platforms.append("dx11")
+
+        if IsD3D12Valid():
+            platforms.append("dx12")
 
         if not blue.pyos.packaged:
             platforms.append("gles2")
