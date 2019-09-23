@@ -369,13 +369,13 @@ D3DFORMAT ConvertToD3D9Format( PixelFormat format )
 }
 
 
-PixelFormat ConvertFromD3D11Format( DXGI_FORMAT format )
+PixelFormat ConvertFromDxgiFormat( DXGI_FORMAT format )
 {
 	// PixelFormat constants match the DXGI_FORMAT constants
 	return (PixelFormat)format;
 }
 
-DXGI_FORMAT ConvertToD3D11Format( PixelFormat format )
+DXGI_FORMAT ConvertToDxgiFormat( PixelFormat format )
 {
 	// PixelFormat constants match the DXGI_FORMAT constants
 	return (DXGI_FORMAT)format;

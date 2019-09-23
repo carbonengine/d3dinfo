@@ -154,6 +154,7 @@
   <ItemGroup>
     <ClInclude Include="AdapterInfo.h" />
     <ClInclude Include="D3D11Info.h" />
+    <ClInclude Include="D3D12Info.h" />
     <ClInclude Include="d3d9info.h" />
     <ClInclude Include="D3DInfoError.h" />
     <ClInclude Include="DisplayModeInfo.h" />
@@ -163,6 +164,7 @@
   <ItemGroup>
     <ClCompile Include="AdapterInfo.cpp" />
     <ClCompile Include="D3D11Info.cpp" />
+    <ClCompile Include="D3D12Info.cpp" />
     <ClCompile Include="d3d9info.cpp" />
     <ClCompile Include="d3dinfo.cpp" />
     <ClCompile Include="D3DInfoError.cpp" />

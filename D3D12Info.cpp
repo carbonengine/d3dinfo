@@ -1,25 +1,25 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Creator:		Snorri Sturluson
-// Created:		January 2013
-// Copyright:	CCP 2013
+// Creator:		Filipp Pavlov
+// Created:		August 2019
+// Copyright:	CCP 2019
 //
 
 #include "StdAfx.h"
-#include "D3D11Info.h"
+#include "D3D12Info.h"
 #include "AdapterInfo.h"
 #include "DisplayModeInfo.h"
 
-BLUE_DEFINE( D3D11Info );
+BLUE_DEFINE( D3D12Info );
 
-const Be::ClassInfo* D3D11Info::ExposeToBlue()
+const Be::ClassInfo* D3D12Info::ExposeToBlue()
 {
-	EXPOSURE_BEGIN( D3D11Info, "Gets info on Direct3D11 and video adapters" )
+	EXPOSURE_BEGIN( D3D12Info, "Gets info on Direct3D12 and video adapters" )
 		MAP_METHOD_AND_WRAP
 		(
 			"InitializeD3D",
 			InitializeD3D,
-			"Initializes Direct3D11."
+			"Initializes Direct3D12."
 			"\n"
 			"\nRaises a RuntimeError if initialization fails."
 		)
@@ -27,7 +27,7 @@ const Be::ClassInfo* D3D11Info::ExposeToBlue()
 		(
 			"ShutdownD3D",
 			ShutdownD3D,
-			"Shuts down Direct3D11."
+			"Shuts down Direct3D12."
 			"\n"
 			"\nRaises a RuntimeError if shutdown fails."
 		)
@@ -81,48 +81,38 @@ const Be::ClassInfo* D3D11Info::ExposeToBlue()
 			"\nformat - Back buffer format (member of d3dinfo.PIXEL_FORMAT)"
 			"\nmodeIndex - Display mode index"
 		)
-	EXPOSURE_END()
+		EXPOSURE_END()
 }
 
 
-D3D11Info::D3D11Info( IRoot* lockobj ) :
+D3D12Info::D3D12Info( IRoot* lockobj ) :
 	m_dxgiModuleHandle( NULL ),
 	m_createDxgiFactory( nullptr ),
 	m_dxgiFactory( nullptr ),
-	m_dx11ModuleHandle( NULL ),
+	m_dx12ModuleHandle( NULL ),
 	m_createDevice( nullptr )
 {
 }
 
-HRESULT D3D11Info::CreateDevice( IDXGIAdapter* adapter )
+HRESULT D3D12Info::CreateDevice( IDXGIAdapter* adapter )
 {
-	const D3D_FEATURE_LEVEL levelWanted = D3D_FEATURE_LEVEL_11_0;
-	D3D_FEATURE_LEVEL levelSupported;
-
-	ID3D11Device* device = nullptr;
-	ID3D11DeviceContext* context = nullptr;
+	IUnknown* device = nullptr;
+	const ::IID deviceIID = { 0x189819f1, 0x1db6, 0x4b57, { 0xbe, 0x54, 0x18, 0x21, 0x33, 0x9b, 0x85, 0xf7 } };
+	D3D_FEATURE_LEVEL dx12 = (D3D_FEATURE_LEVEL)0xc000;
 
 	HRESULT hr;
 	__try
 	{
-		hr = m_createDevice( 
-			adapter, 
-			D3D_DRIVER_TYPE_UNKNOWN, 
-			0, 0, 
-			&levelWanted, 1,
-			D3D11_SDK_VERSION, 
-			&device,
-			&levelSupported, 
-			&context
-			);
+		hr = m_createDevice(
+			adapter,
+			dx12,
+			deviceIID,
+			(void**)&device
+		);
 	}
-	__except(EXCEPTION_EXECUTE_HANDLER)
+	__except( EXCEPTION_EXECUTE_HANDLER )
 	{
 		return E_FAIL;
-	}
-	if( context )
-	{
-		context->Release();
 	}
 	if( device )
 	{
@@ -131,11 +121,11 @@ HRESULT D3D11Info::CreateDevice( IDXGIAdapter* adapter )
 	return hr;
 }
 
-D3DInfoResult D3D11Info::InitializeD3D()
+D3DInfoResult D3D12Info::InitializeD3D()
 {
-	// Manually load the dxgi and d3d11 libraries. This allows us to run on platforms that don't
-	// have DX11 installed and raise an error here, rather than failing to import the module
-	// as a whole as would happen if we linked against DX11.
+	// Manually load the dxgi and d3d12 libraries. This allows us to run on platforms that don't
+	// have DX12 installed and raise an error here, rather than failing to import the module
+	// as a whole as would happen if we linked against DX12.
 
 	m_dxgiModuleHandle = LoadLibrary( "dxgi.dll" );
 	if( !m_dxgiModuleHandle )
@@ -153,23 +143,23 @@ D3DInfoResult D3D11Info::InitializeD3D()
 		return D3DInfoResult( BRC_RUNTIME_ERROR, "Couldn't find CreateDXGIFactory" );
 	}
 
-	m_dx11ModuleHandle = LoadLibrary( "d3d11.dll" );
-	if( !m_dx11ModuleHandle )
+	m_dx12ModuleHandle = LoadLibrary( "d3d12.dll" );
+	if( !m_dx12ModuleHandle )
 	{
-		return D3DInfoResult( BRC_RUNTIME_ERROR, "Couldn't load d3d11.dll" );
+		return D3DInfoResult( BRC_RUNTIME_ERROR, "Couldn't load d3d12.dll" );
 	}
 
-	m_createDevice = (PFN_D3D11_CREATE_DEVICE)GetProcAddress( m_dx11ModuleHandle, "D3D11CreateDevice" );
+	m_createDevice = (PFN_D3D12_CREATE_DEVICE)GetProcAddress( m_dx12ModuleHandle, "D3D12CreateDevice" );
 	if( !m_createDevice )
 	{
 		m_createDxgiFactory = nullptr;
 		FreeLibrary( m_dxgiModuleHandle );
 		m_dxgiModuleHandle = NULL;
 
-		FreeLibrary( m_dx11ModuleHandle );
-		m_dx11ModuleHandle = NULL;
+		FreeLibrary( m_dx12ModuleHandle );
+		m_dx12ModuleHandle = NULL;
 
-		return D3DInfoResult( BRC_RUNTIME_ERROR, "Couldn't find D3D11CreateDevice" );
+		return D3DInfoResult( BRC_RUNTIME_ERROR, "Couldn't find D3D12CreateDevice" );
 	}
 
 	HRESULT hr = m_createDxgiFactory( __uuidof( IDXGIFactory ), (void**)&m_dxgiFactory );
@@ -179,10 +169,10 @@ D3DInfoResult D3D11Info::InitializeD3D()
 		return D3DInfoResult( BRC_RUNTIME_ERROR, "CreateDXGIFactory call failed" );
 	}
 
-	uint32_t count = 0; 
-	IDXGIAdapter* pAdapter; 
+	uint32_t count = 0;
+	IDXGIAdapter* pAdapter;
 
-	while( m_dxgiFactory->EnumAdapters( count++, &pAdapter ) != DXGI_ERROR_NOT_FOUND ) 
+	while( m_dxgiFactory->EnumAdapters( count++, &pAdapter ) != DXGI_ERROR_NOT_FOUND )
 	{
 		if( FAILED( CreateDevice( pAdapter ) ) )
 		{
@@ -219,13 +209,13 @@ D3DInfoResult D3D11Info::InitializeD3D()
 			aop.output = pOutput;
 			m_adapters.push_back( aop );
 		}
-		
-	} 
+
+	}
 
 	return D3DInfoResult();
 }
 
-D3DInfoResult D3D11Info::ShutdownD3D()
+D3DInfoResult D3D12Info::ShutdownD3D()
 {
 	if( !m_dxgiFactory )
 	{
@@ -239,7 +229,7 @@ D3DInfoResult D3D11Info::ShutdownD3D()
 	return D3DInfoResult();
 }
 
-D3DInfoResult D3D11Info::GetAdapterCount( uint32_t& count )
+D3DInfoResult D3D12Info::GetAdapterCount( uint32_t& count )
 {
 	if( !m_dxgiFactory )
 	{
@@ -250,7 +240,7 @@ D3DInfoResult D3D11Info::GetAdapterCount( uint32_t& count )
 	return D3DInfoResult();
 }
 
-D3DInfoResult D3D11Info::GetAdapterInfo( uint32_t adapterIndex, AdapterInfo*& adapterInfo )
+D3DInfoResult D3D12Info::GetAdapterInfo( uint32_t adapterIndex, AdapterInfo*& adapterInfo )
 {
 	D3DInfoResult result = ValidateAdapterIndex( adapterIndex );
 	if( !result )
@@ -262,12 +252,12 @@ D3DInfoResult D3D11Info::GetAdapterInfo( uint32_t adapterIndex, AdapterInfo*& ad
 	return D3DInfoResult();
 }
 
-D3DInfoResult D3D11Info::GetCurrentDisplayMode( uint32_t adapterIndex, DisplayModeInfo** displayMode )
+D3DInfoResult D3D12Info::GetCurrentDisplayMode( uint32_t adapterIndex, DisplayModeInfo** displayMode )
 {
 	return D3DInfoResult( BRC_NOT_IMPLEMENTED, "Not implemented" );
 }
 
-D3DInfoResult D3D11Info::GetDisplayModeCount( uint32_t adapterIndex, PixelFormat backBufferFormat, uint32_t& count )
+D3DInfoResult D3D12Info::GetDisplayModeCount( uint32_t adapterIndex, PixelFormat backBufferFormat, uint32_t& count )
 {
 	D3DInfoResult result = ValidateAdapterIndex( adapterIndex );
 	if( !result )
@@ -290,7 +280,7 @@ D3DInfoResult D3D11Info::GetDisplayModeCount( uint32_t adapterIndex, PixelFormat
 	}
 }
 
-D3DInfoResult D3D11Info::GetDisplayMode( uint32_t adapterIndex, PixelFormat backBufferFormat, uint32_t modeIndex, DisplayModeInfo** displayMode )
+D3DInfoResult D3D12Info::GetDisplayMode( uint32_t adapterIndex, PixelFormat backBufferFormat, uint32_t modeIndex, DisplayModeInfo** displayMode )
 {
 	D3DInfoResult result = ValidateAdapterIndex( adapterIndex );
 	if( !result )
@@ -339,7 +329,7 @@ D3DInfoResult D3D11Info::GetDisplayMode( uint32_t adapterIndex, PixelFormat back
 	return D3DInfoResult();
 }
 
-D3DInfoResult D3D11Info::ValidateAdapterIndex( uint32_t adapterIndex )
+D3DInfoResult D3D12Info::ValidateAdapterIndex( uint32_t adapterIndex )
 {
 	if( !m_dxgiFactory )
 	{

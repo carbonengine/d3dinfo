@@ -43,12 +43,18 @@
     <ClInclude Include="D3D11Info.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="D3D12Info.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="d3d9info.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="D3D11Info.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D3D12Info.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

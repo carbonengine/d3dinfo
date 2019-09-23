@@ -122,7 +122,7 @@ extern const Be::VarChooser PixelFormat_Chooser[];
 PixelFormat ConvertFromD3D9Format( D3DFORMAT format );
 D3DFORMAT ConvertToD3D9Format( PixelFormat format );
 
-PixelFormat ConvertFromD3D11Format( D3DFORMAT format );
-DXGI_FORMAT ConvertToD3D11Format( PixelFormat format );
+PixelFormat ConvertFromDxgiFormat( D3DFORMAT format );
+DXGI_FORMAT ConvertToDxgiFormat( PixelFormat format );
 
 #endif // PixelFormat_h
