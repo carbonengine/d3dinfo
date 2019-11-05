@@ -869,7 +869,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         else:
             scene.nebulaBrightnessOverride = 0.0
 
-        #scene.reflectionProbe = trinity.Tr2ReflectionProbe() if isHighQuality else None
+        scene.reflectionProbe = trinity.Tr2ReflectionProbe() if isHighQuality else None
 
     def _GetPostProcessPSData(self):
         scene = self.GetScene()
