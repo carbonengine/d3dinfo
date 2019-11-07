@@ -24,7 +24,7 @@ def _GetMergedParameters(resPath, options, cache):
         return dict(cache[(resPath, frozen)][0]), dict(cache[(resPath, frozen)][1]), dict(cache[(resPath, frozen)][2])
     path = blue.paths.ResolvePath(resPath)
     try:
-        result = effectinfo.get_merged_parameters(path, shader_filter=ShaderFilter if options else None)
+        result = effectinfo.get_merged_parameters(path, shader_filter=ShaderFilter)
     except IOError:
         result = {}, {}, {}
     if cache is not None:
