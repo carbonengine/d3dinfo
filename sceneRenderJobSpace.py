@@ -839,7 +839,12 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         step = self.GetStep("FINAL_BLIT")
         if step is None:
             return
-        step.quality = self.postProcessingQuality
+
+        if self.scene and self.scene.object.visualizeMethod == 0:
+            step.quality = self.postProcessingQuality
+        else:
+            step.quality = 0
+
         step.enabled = step.quality != 0 or self.antiAliasingEnabled
 
     def ApplyPerformancePreferencesToScene(self):
