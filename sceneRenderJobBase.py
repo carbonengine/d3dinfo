@@ -542,7 +542,7 @@ class SceneRenderJobBase(object):
     def SetSwapChain(self, swapChain):
         """
         Adds or removes a final present swapchain renderstep.
-        """        
+        """
         self.DoReleaseResources(1)
         if swapChain is None:
             self.RemoveStep("PRESENT_SWAPCHAIN")
@@ -568,8 +568,12 @@ class SceneRenderJobBase(object):
         if self.GetSwapChain() is not None:
             # Sometimes the backbuffer has not been initialized, but the width and height
             # of the swapchain is always there
-            width = self.GetSwapChain().width
-            height = self.GetSwapChain().height
+            if self.GetSwapChain().backBuffer is not None:
+                width = self.GetSwapChain().backBuffer.width
+                height = self.GetSwapChain().backBuffer.height
+            else:
+                width = self.GetSwapChain().width
+                height = self.GetSwapChain().height
         else:    
             width = _singletons.device.GetPresentParameters()['BackBufferWidth']
             height = _singletons.device.GetPresentParameters()['BackBufferHeight']
