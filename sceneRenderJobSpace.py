@@ -461,10 +461,14 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         if scene is not None and scene.postprocess is None and hasattr(scene, "postprocess"):
             scene.postprocess = trinity.Load(DEFAULT_POSTPROCESS_PATH)
 
+        if not self.HasStep("FINAL_BLIT"):
+            self.AddStep("FINAL_BLIT", trinity.TriStepRenderPostProcess(scene, self._GetSourceRTForPostProcessing()))
+
         self._SetTaaToRenderJobState()
         self.ModifyPostProcessForPerformance()
 
         self.SetStepAttr("FINAL_BLIT", 'scene', scene)
+        self.SetStepAttr("FINAL_BLIT", 'renderTarget', self._GetSourceRTForPostProcessing())
 
         self.SetStepAttr("UPDATE_SCENE", 'object', scene)
         self.SetStepAttr("RENDER_MAIN_PASS", 'scene', scene)
@@ -478,10 +482,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self._CreateDepthPass()
 
         self.ApplyPerformancePreferencesToScene()
-
-        if scene is not None and (self.customBackBuffer is not None or self.taaEnabled):
-            finalBlitStep = self.AddStep("FINAL_BLIT", trinity.TriStepRenderPostProcess(scene, self._GetSourceRTForPostProcessing()))
-            finalBlitStep.quality = self.postProcessingQuality
 
 
     def _SetTaaToRenderJobState(self):
