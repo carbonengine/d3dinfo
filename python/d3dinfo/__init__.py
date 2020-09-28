@@ -117,30 +117,29 @@ def SaveRenderTarget(filename, rt=None):
         return Tr2HostBitmap(rt).Save(filename)
 
 
-def _StoreGPUInfoInCrashHeaders():
+def _StoreGPUInfoInBreakpadHeaders():
     """
-    Detect and save GPU information in crash headers.
+    Detect and save GPU information in Breakpad headers.
     This is extremely useful for graphics crashes and required by NVidia for them to look at driver crashes
     """
     try:
         adapterInfo = adapters.GetAdapterInfo(adapters.DEFAULT_ADAPTER)
 
-        blue.SetCrashKeyValues("GPU_Description", adapterInfo.description)
-        blue.SetCrashKeyValues("GPU_Driver", adapterInfo.driver)
-        blue.SetCrashKeyValues("GPU_VendorId", str(adapterInfo.vendorID))
-        blue.SetCrashKeyValues("GPU_DeviceId", str(adapterInfo.deviceID))
-        blue.SetCrashKeyValues("trinityPlatform", platform)
+        blue.SetCrashKeyValues(u"GPU_Description", adapterInfo.description)
+        blue.SetCrashKeyValues(u"GPU_Driver", unicode(adapterInfo.driver))
+        blue.SetCrashKeyValues(u"GPU_VendorId", unicode(adapterInfo.vendorID))
+        blue.SetCrashKeyValues(u"GPU_DeviceId", unicode(adapterInfo.deviceID))
+        blue.SetCrashKeyValues(u"trinityPlatform", unicode(platform))
         
         try:
             driverInfo = adapterInfo.GetDriverInfo()
-            blue.SetCrashKeyValues("GPU_Driver_Version", driverInfo.driverVersionString)
-            blue.SetCrashKeyValues("GPU_Driver_Date", driverInfo.driverDate)
-            blue.SetCrashKeyValues("GPU_Driver_Vendor", driverInfo.driverVendor)
-            blue.SetCrashKeyValues("GPU_Driver_Is_Optimus", "Yes" if driverInfo.isOptimus else "No")
-            blue.SetCrashKeyValues("GPU_Driver_Is_Amd_Switchable", "Yes" if driverInfo.isAmdDynamicSwitchable else "No")
+            blue.SetCrashKeyValues(u"GPU_Driver_Version", unicode(driverInfo.driverVersionString))
+            blue.SetCrashKeyValues(u"GPU_Driver_Date", unicode(driverInfo.driverDate))
+            blue.SetCrashKeyValues(u"GPU_Driver_Vendor", unicode(driverInfo.driverVendor))
+            blue.SetCrashKeyValues(u"GPU_Driver_Is_Optimus", u"Yes" if driverInfo.isOptimus else u"No")
+            blue.SetCrashKeyValues(u"GPU_Driver_Is_Amd_Switchable", u"Yes" if driverInfo.isAmdDynamicSwitchable else u"No")
         except RuntimeError:
-            pass
-            blue.SetCrashKeyValues("GPU_Driver_Version", str(adapterInfo.driverVersion))
+            blue.SetCrashKeyValues(u"GPU_Driver_Version", unicode(adapterInfo.driverVersion))
     except RuntimeError:
         pass
     except SystemError:
@@ -274,7 +273,7 @@ def GetHighestSupportedMsaaType(formats):
     return 1
 
 def _init():
-    _StoreGPUInfoInCrashHeaders()
+    _StoreGPUInfoInBreakpadHeaders()
     device.SetRenderJobs(renderJobs)
 
     # Create a job that calculates and displays the frames per second.
