@@ -40,6 +40,7 @@ class SceneRenderJobSpaceEmbedded(SceneRenderJobSpace):
     renderStepOrder += [
         "POP_RENDER_TARGET",
         "POP_DEPTH_STENCIL",
+        "COPY_TO_BLIT_TEXTURE",
         "PUSH_POSTPROCESSING_RENDER_TARGET",
         "RJ_POSTPROCESSING_EMBEDDED",
         "POP_POSTPROCESSING_RENDER_TARGET",
@@ -154,13 +155,12 @@ class SceneRenderJobSpaceEmbedded(SceneRenderJobSpace):
         self.rtHeight = vp.height
 
         if self.customBackBuffer is None:
-            self.offscreenRenderTarget = trinity.Tr2RenderTarget(vp.width, vp.height, 1, self.bbFormat)
+            self.offscreenRenderTarget = trinity.Tr2RenderTarget(
+                vp.width, vp.height, 1, self.bbFormat)
             self.finalTexture = self.offscreenRenderTarget
         else:
             self.finalTexture = trinity.Tr2RenderTarget(vp.width, vp.height, 1, self.customBackBuffer.format)
 
-        if (self.msaaEnabled or self.hdrEnabled) and not self._UsePostProcessingEmbedded():
-            self.finalTexture = self.customBackBuffer
 
         if self.customDepthStencil is None:
             self.offscreenDepthStencil = trinity.Tr2DepthStencil(
@@ -216,7 +216,10 @@ class SceneRenderJobSpaceEmbedded(SceneRenderJobSpace):
                 self.AddStep("PUSH_POSTPROCESSING_RENDER_TARGET",trinity.TriStepPushRenderTarget(self.finalTexture))
                 self.AddStep("POP_POSTPROCESSING_RENDER_TARGET", trinity.TriStepPopRenderTarget())
 
-
+        if self.customBackBuffer is not None and self.finalTexture is not None:
+            step = trinity.TriStepResolve(self.finalTexture, self.customBackBuffer)
+            step.name = 'Resolve: finalTexture <== customBackBuffer'
+            self.AddStep("COPY_TO_BLIT_TEXTURE", step)
 
         if self.doFinalBlit:
             self.AddStep("SET_BLIT_VIEWPORT", trinity.TriStepSetViewport(viewport))
