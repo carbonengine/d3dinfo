@@ -206,18 +206,20 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         self.EnableSculpting(self.sculptingEnabled)
 
     def EnableScatter(self, isEnabled):
-        import paperDoll
+        from eve.client.script.paperDoll.SkinLightmapRenderer import SkinLightmapRenderer
+
         self.scatterEnabled = isEnabled
         if self.enabled and isEnabled:
-            self.AddStep("SCATTER", paperDoll.SkinLightmapRenderer.CreateScatterStep(self, self.GetScene(), False))
+            self.AddStep("SCATTER", SkinLightmapRenderer.CreateScatterStep(self, self.GetScene(), False))
         else:
             self.RemoveStep("SCATTER")
 
     def EnableSculpting(self, isEnabled):
-        import paperDoll
+        from eve.client.script.paperDoll.AvatarGhost import AvatarGhost
+
         self.sculptingEnabled = isEnabled
         if self.enabled and isEnabled:
-            self.AddStep("RENDER_SCULPTING", paperDoll.AvatarGhost.CreateSculptingStep(self, False))
+            self.AddStep("RENDER_SCULPTING", AvatarGhost.CreateSculptingStep(self, False))
         else:
             self.RemoveStep("RENDER_SCULPTING")
 
