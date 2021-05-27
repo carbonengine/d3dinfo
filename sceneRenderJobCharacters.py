@@ -6,6 +6,7 @@ from . import _singletons
 from . import _trinity as trinity
 import trinity.evePostProcess
 import charactercreator.client.grading as grading
+import blue
 # paperDoll is imported later on, wth!
 
 
@@ -59,25 +60,54 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         "RENDER_UI",
     ]
 
-    def setupPostProcess(self):
-        resolveTarget = self.GetBackBufferRenderTarget()
+    def setupPostProcess(self, msaaType):
+        if msaaType <= 1:
+            resolveTarget = self.GetBackBufferRenderTarget()
+        else:
+            resolveTarget = self.customBackBuffer
         self.resolveTargetDimensions = (resolveTarget.width, resolveTarget.height)
+        print type(self.viewport)
+        self.vp = trinity.TriViewport()
+        self.pp_viewport = blue.BluePythonWeakRef(self.vp)
+        self.derive_pp_viewport()
+
         if self.postProcess is None:
-            self.postProcess = grading.PostProcess('res:/dx9/scene/postprocess/portraitLUT.red', resolveTarget, viewport=self.viewport)
+            self.postProcess = grading.PostProcess('res:/dx9/scene/postprocess/portraitLUT.red', resolveTarget, viewport=self.pp_viewport)
             self.AddStep("RJ_POSTPROCESSING", trinity.TriStepRunJob(self.postProcess.GetJob()))
         lut = grading.GetTexLUT(self)
         if lut is not None:
             lut.resourcePath = self.lut_res_path
 
+    def derive_pp_viewport(self):
+        self.pp_viewport.object.x = min(max(self.viewport.object.x, 0), self.resolveTargetDimensions[0])
+        self.pp_viewport.object.y = min(max(self.viewport.object.y, 0), self.resolveTargetDimensions[1])
+        if self.viewport.object.x + self.viewport.object.width < 0:
+            self.pp_viewport.object.width = 0
+        elif self.viewport.object.x < 0:
+            self.pp_viewport.object.width = self.viewport.object.width + self.viewport.object.x
+        elif self.viewport.object.x + self.viewport.object.width > self.resolveTargetDimensions[0]:
+            self.pp_viewport.object.width = (self.resolveTargetDimensions[0] - self.viewport.object.x)
+        else:
+            self.pp_viewport.object.width = self.viewport.object.width
+        if self.viewport.object.y + self.viewport.object.height < 0:
+            self.pp_viewport.object.height = 0
+        elif self.viewport.object.y < 0:
+            self.pp_viewport.object.height = self.viewport.object.height + self.viewport.object.y
+        elif self.viewport.object.y + self.viewport.object.height > self.resolveTargetDimensions[1]:
+            self.pp_viewport.object.height = (self.resolveTargetDimensions[1] - self.viewport.object.y)
+        else:
+            self.pp_viewport.object.height = self.viewport.object.height
+
     def UpdatePostProcessingTexCoords(self):
         if self.postProcess is not None:
             step = grading.GetLUTStepRenderEffect(self.postProcess.GetJob())
             texcoords = None
-            if hasattr(self, "viewport") and hasattr(self, 'resolveTargetDimensions') and step is not None and self.viewport is not None and self.viewport.object is not None:
-                texcoords_top = float(self.viewport.object.y) / self.resolveTargetDimensions[1]
-                texcoords_left = float(self.viewport.object.x) / self.resolveTargetDimensions[0]
-                texcoords_bottom = float(self.viewport.object.y + self.viewport.object.height) / self.resolveTargetDimensions[1]
-                texcoords_right = float(self.viewport.object.x + self.viewport.object.width) / self.resolveTargetDimensions[0]
+            if hasattr(self, "pp_viewport") and hasattr(self, 'resolveTargetDimensions') and step is not None and self.pp_viewport is not None and self.pp_viewport.object is not None:
+                self.derive_pp_viewport()
+                texcoords_top = float(self.pp_viewport.object.y) / self.resolveTargetDimensions[1]
+                texcoords_left = float(self.pp_viewport.object.x) / self.resolveTargetDimensions[0]
+                texcoords_bottom = float(self.pp_viewport.object.y + self.pp_viewport.object.height) / self.resolveTargetDimensions[1]
+                texcoords_right = float(self.pp_viewport.object.x + self.pp_viewport.object.width) / self.resolveTargetDimensions[0]
                 texcoords = (texcoords_left, texcoords_top, texcoords_right, texcoords_bottom)
             if texcoords is not None:
                 step.tlTexCoord = (texcoords[0], texcoords[1])
@@ -170,8 +200,6 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             self.bgBuffer = rtm.GetRenderTargetAL(width, height, 1, bbFormat)
             self.AddStep("SET_BG_LAYER", trinity.TriStepResolve(self.bgBuffer, self.GetBackBufferRenderTarget()))
             self.AddStep("SET_BLITORIGINAL", trinity.TriStepSetVariableStore("BlitOriginal", self.bgBuffer))
-            self.setupPostProcess()
-            self.AddStep("SET_BLITCURRENT", trinity.TriStepSetVariableStore("BlitCurrent", self.postProcess.GetJob().resolveTarget))
             self.AddStep("RENDER_BLEND", trinity.TriStepRenderEffect(self.CreateRenderBlendEffect(msaaType)))
 
         if msaaType <= 1:
@@ -184,6 +212,9 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             self.AddStep("RESTORE_BACKBUFFER", trinity.TriStepPopRenderTarget())
 
             self.AddStep("RESOLVE_IMAGE", trinity.TriStepResolve(self.GetBackBufferRenderTarget(), self.customBackBuffer))
+        if viewport:
+            self.setupPostProcess(msaaType)
+            self.AddStep("SET_BLITCURRENT", trinity.TriStepSetVariableStore("BlitCurrent", self.postProcess.GetJob().destination))
 
 
     def UpdateViewport(self, new_viewport):
