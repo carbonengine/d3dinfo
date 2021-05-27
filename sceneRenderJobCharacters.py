@@ -66,7 +66,6 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         else:
             resolveTarget = self.customBackBuffer
         self.resolveTargetDimensions = (resolveTarget.width, resolveTarget.height)
-        print type(self.viewport)
         self.vp = trinity.TriViewport()
         self.pp_viewport = blue.BluePythonWeakRef(self.vp)
         self.derive_pp_viewport()
