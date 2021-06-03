@@ -52,25 +52,29 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         "RESTORE_BACKBUFFER",
         "RESTORE_DEPTH_STENCIL",
         "RESOLVE_IMAGE",
-        "RJ_POSTPROCESSING",
+        "SET_BLENDSOURCE",
+        "PUSH_RENDER_BLEND_RT",
+        "PUSH_RENDER_BLEND_DS",
         "SET_BLITCURRENT",
         "SET_BLITORIGINAL",
         "RENDER_BLEND",
+        "POP_RENDER_BLEND_RT",
+        "POP_RENDER_BLEND_DS",
+        "SET_PP_VIEWPORT",
+        "RJ_POSTPROCESSING",
         "RENDER_TOOLS",
         "RENDER_UI",
     ]
 
-    def setupPostProcess(self, msaaType):
-        if msaaType <= 1:
-            resolveTarget = self.GetBackBufferRenderTarget()
-        else:
-            resolveTarget = self.customBackBuffer
+    def setupPostProcess(self):
+        resolveTarget = self.GetBackBufferRenderTarget()
         self.resolveTargetDimensions = (resolveTarget.width, resolveTarget.height)
         self.vp = trinity.TriViewport()
         self.pp_viewport = blue.BluePythonWeakRef(self.vp)
         self.derive_pp_viewport()
 
         if self.postProcess is None:
+            self.AddStep("SET_PP_VIEWPORT", trinity.TriStepSetViewport(self.pp_viewport.object))
             self.postProcess = grading.PostProcess('res:/dx9/scene/postprocess/portraitLUT.red', resolveTarget, viewport=self.pp_viewport)
             self.AddStep("RJ_POSTPROCESSING", trinity.TriStepRunJob(self.postProcess.GetJob()))
         lut = grading.GetTexLUT(self)
@@ -197,9 +201,17 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
 
         if viewport:
             self.bgBuffer = rtm.GetRenderTargetAL(width, height, 1, bbFormat)
+            self.blendsource = rtm.GetRenderTargetAL(width, height, 1, bbFormat, index=1)
             self.AddStep("SET_BG_LAYER", trinity.TriStepResolve(self.bgBuffer, self.GetBackBufferRenderTarget()))
+            self.AddStep("SET_BLENDSOURCE", trinity.TriStepResolve(self.blendsource, self.GetBackBufferRenderTarget()))
+            self.AddStep("PUSH_RENDER_BLEND_RT", trinity.TriStepPushRenderTarget(self.GetBackBufferRenderTarget()))
+            self.AddStep("PUSH_RENDER_BLEND_DS", trinity.TriStepPushDepthStencil(None))
             self.AddStep("SET_BLITORIGINAL", trinity.TriStepSetVariableStore("BlitOriginal", self.bgBuffer))
+            self.AddStep("SET_BLITCURRENT", trinity.TriStepSetVariableStore("BlitCurrent", self.blendsource))
             self.AddStep("RENDER_BLEND", trinity.TriStepRenderEffect(self.CreateRenderBlendEffect(msaaType)))
+            self.AddStep("POP_RENDER_BLEND_RT", trinity.TriStepPopRenderTarget())
+            self.AddStep("POP_RENDER_BLEND_DS", trinity.TriStepPopDepthStencil())
+            self.setupPostProcess()
 
         if msaaType <= 1:
             self.RemoveStep("SET_BACKBUFFER")
@@ -211,9 +223,6 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             self.AddStep("RESTORE_BACKBUFFER", trinity.TriStepPopRenderTarget())
 
             self.AddStep("RESOLVE_IMAGE", trinity.TriStepResolve(self.GetBackBufferRenderTarget(), self.customBackBuffer))
-        if viewport:
-            self.setupPostProcess(msaaType)
-            self.AddStep("SET_BLITCURRENT", trinity.TriStepSetVariableStore("BlitCurrent", self.postProcess.GetJob().destination))
 
 
     def UpdateViewport(self, new_viewport):
