@@ -39,6 +39,7 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         "UPDATE_CAMERA",
         "UPDATE_SECONDARY_CAMERAS",
         "SET_BG_LAYER",
+        "PLACE_BG",
         "SET_BACKBUFFER",
         "SET_DEPTH_STENCIL",
         "SET_VIEWPORT",
@@ -57,7 +58,9 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         "PUSH_RENDER_BLEND_DS",
         "SET_BLITCURRENT",
         "SET_BLITORIGINAL",
+        "SET_BLEND_VP",
         "RENDER_BLEND",
+        "PLACE_AVATAR",
         "POP_RENDER_BLEND_RT",
         "POP_RENDER_BLEND_DS",
         "SET_PP_VIEWPORT",
@@ -115,6 +118,8 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             if texcoords is not None:
                 step.tlTexCoord = (texcoords[0], texcoords[1])
                 step.brTexCoord = (texcoords[2], texcoords[3])
+
+            self.postProcess.UpdateViewport(self.pp_viewport.object)
 
     def _ManualInit(self, name="SceneRenderJobCharacters"):
         """
@@ -186,10 +191,71 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         else:
             msaaType = 4
 
+        self.msaaType = msaaType
+
         if msaaType <= 1:
             self.SetStepAttr("CLEAR", "isColorCleared", False)
 
-        width, height = self.GetBackBufferSize()
+        if not self.dx9_active:
+            width, height = self.SetupBufferedViewports(viewport)
+            self.SetupPasses(viewport, msaaType, width, height)
+        else:
+            width, height = self.GetBackBufferSize()
+            self.SetupDX9Passes(viewport, width, height, msaaType)
+
+        self.UpdatePostProcessingTexCoords()
+
+
+    def SetupPasses(self, viewport, msaaType, width, height):
+        self.enabled = False
+
+        bbFormat = _singletons.device.GetRenderContext().GetBackBufferFormat()
+        dsFormat = trinity.DEPTH_STENCIL_FORMAT.D24S8
+
+        self.customBackBuffer = None
+        self.customDepthStencil = rtm.GetDepthStencilAL(width, height, dsFormat, msaaType)
+        self.AddStep("SET_DEPTH_STENCIL", trinity.TriStepPushDepthStencil(self.customDepthStencil))
+        self.AddStep("RESTORE_DEPTH_STENCIL", trinity.TriStepPopDepthStencil())
+
+        if viewport:
+            self.bgBuffer = rtm.GetRenderTargetAL(width, height, 1, bbFormat)
+            self.blendsource = rtm.GetRenderTargetAL(width, height, 1, bbFormat, index=1)
+            if self.dx9_active:
+                self.customBackBuffer = rtm.GetRenderTargetAL(width, height, 1, bbFormat)
+            else:
+                self.customBackBuffer = rtm.GetRenderTargetMsaaAL(width, height, bbFormat, msaaType, 0)
+            self.AddStep("SET_BACKBUFFER", trinity.TriStepPushRenderTarget(self.customBackBuffer))
+            self.AddStep("SET_BG_LAYER", trinity.TriStepCopyRenderTarget(self.bgBuffer, self.GetBackBufferRenderTarget(), self.local_vp_obj, self.scr_vp_obj))
+            if msaaType <= 1:
+                self.AddStep("PLACE_BG", trinity.TriStepCopyRenderTarget(self.customBackBuffer, self.GetBackBufferRenderTarget(), self.local_vp_obj, self.scr_vp_obj))
+            self.AddStep("RESOLVE_IMAGE", trinity.TriStepResolve(self.blendsource, self.customBackBuffer))
+            self.AddStep("PUSH_RENDER_BLEND_RT", trinity.TriStepPushRenderTarget(self.GetBackBufferRenderTarget()))
+            self.AddStep("PUSH_RENDER_BLEND_DS", trinity.TriStepPushDepthStencil(None))
+            self.AddStep("SET_BLITORIGINAL", trinity.TriStepSetVariableStore("BlitOriginal", self.bgBuffer))
+            self.AddStep("SET_BLITCURRENT", trinity.TriStepSetVariableStore("BlitCurrent", self.blendsource))
+            self.AddStep("SET_BLEND_VP", trinity.TriStepSetViewport(self.scr_vp_obj))
+            self.AddStep("RENDER_BLEND", trinity.TriStepRenderEffect(self.CreateRenderBlendEffect(msaaType)))
+            self.AddStep("PLACE_AVATAR", trinity.TriStepCopyRenderTarget(self.bgBuffer, self.GetBackBufferRenderTarget(), self.scr_vp_obj, self.local_vp_obj))
+            self.AddStep("POP_RENDER_BLEND_RT", trinity.TriStepPopRenderTarget())
+            self.AddStep("POP_RENDER_BLEND_DS", trinity.TriStepPopDepthStencil())
+            self.setupPostProcess()
+            self.AddStep("RESTORE_BACKBUFFER", trinity.TriStepPopRenderTarget())
+        else:
+            if msaaType <= 1:
+                self.RemoveStep("SET_BACKBUFFER")
+                self.RemoveStep("RESTORE_BACKBUFFER")
+                self.RemoveStep("RESOLVE_IMAGE")
+            else:
+                self.customBackBuffer = rtm.GetRenderTargetMsaaAL(width, height, bbFormat, msaaType, 0)
+                self.AddStep("SET_BACKBUFFER", trinity.TriStepPushRenderTarget(self.customBackBuffer))
+                self.AddStep("RESTORE_BACKBUFFER", trinity.TriStepPopRenderTarget())
+                self.AddStep("RESOLVE_IMAGE", trinity.TriStepResolve(self.GetBackBufferRenderTarget(), self.customBackBuffer))
+
+        self.enabled = True
+
+    def SetupDX9Passes(self, viewport, width, height, msaaType):
+
+        self.enabled = False
 
         bbFormat = _singletons.device.GetRenderContext().GetBackBufferFormat()
         dsFormat = trinity.DEPTH_STENCIL_FORMAT.D24S8
@@ -213,26 +279,90 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             self.AddStep("POP_RENDER_BLEND_DS", trinity.TriStepPopDepthStencil())
             self.setupPostProcess()
 
-        if msaaType <= 1:
-            self.RemoveStep("SET_BACKBUFFER")
-            self.RemoveStep("RESTORE_BACKBUFFER")
-            self.RemoveStep("RESOLVE_IMAGE")
+        self.RemoveStep("SET_BACKBUFFER")
+        self.RemoveStep("RESTORE_BACKBUFFER")
+        self.RemoveStep("RESOLVE_IMAGE")
+        self.enabled = True
+
+    def SetupBufferedViewports(self, viewport):
+        width = 0
+        height = 0
+        scr_width = 0
+        scr_height = 0
+
+        if not viewport:
+            width, height = self.GetBackBufferSize()
         else:
-            self.customBackBuffer = rtm.GetRenderTargetMsaaAL(width, height, bbFormat, msaaType, 0)
-            self.AddStep("SET_BACKBUFFER", trinity.TriStepPushRenderTarget(self.customBackBuffer))
-            self.AddStep("RESTORE_BACKBUFFER", trinity.TriStepPopRenderTarget())
+            self.scr_vp_obj = trinity.TriViewport()
+            self.scr_vp = blue.BluePythonWeakRef(self.scr_vp_obj)
+            self.scr_vp.object.x = viewport.x
+            self.scr_vp.object.y = viewport.y
+            self.scr_vp.object.width = viewport.width
+            self.scr_vp.object.height = viewport.height
+            self.scr_vp.object.minZ = viewport.minZ
+            self.scr_vp.object.maxZ = viewport.maxZ
+            self.local_vp_obj = trinity.TriViewport()
+            self.local_vp = blue.BluePythonWeakRef(self.local_vp_obj)
+            self.local_vp.object.x = 0
+            self.local_vp.object.y = 0
+            self.local_vp.object.width = viewport.width
+            self.local_vp.object.height = viewport.height
+            self.local_vp.object.minZ = viewport.minZ
+            self.local_vp.object.maxZ = viewport.maxZ
+            scr_width, scr_height = self.GetBackBufferSize()
+            width, height = viewport.width, viewport.height
+            offsetX = viewport.x
+            offsetY = viewport.y
+            if not self.dx9_active:
+                self._SetViewport(self.local_vp_obj)
+            else:
+                self._SetViewport(self.scr_vp_obj)
 
-            self.AddStep("RESOLVE_IMAGE", trinity.TriStepResolve(self.GetBackBufferRenderTarget(), self.customBackBuffer))
+        return width, height
 
+    def UpdateBufferedViewports(self, new_viewport):
+        self.scr_vp_obj.x = new_viewport.x
+        self.scr_vp_obj.y = new_viewport.y
+
+    def UpdateSteps(self):
+        if not self.dx9_active:
+            self.RemoveStep("SET_BG_LAYER")
+            self.RemoveStep("PLACE_BG")
+            self.AddStep("SET_BG_LAYER", trinity.TriStepCopyRenderTarget(self.bgBuffer, self.GetBackBufferRenderTarget(), self.local_vp_obj, self.scr_vp_obj))
+            if self.msaaType <= 1:
+                self.AddStep("PLACE_BG", trinity.TriStepCopyRenderTarget(self.customBackBuffer, self.GetBackBufferRenderTarget(), self.local_vp_obj, self.scr_vp_obj))
+            self.RemoveStep("PLACE_AVATAR")
+            self.AddStep("PLACE_AVATAR", trinity.TriStepCopyRenderTarget(self.bgBuffer, self.GetBackBufferRenderTarget(), self.scr_vp_obj, self.local_vp_obj))
+            self.RemoveStep("SET_BLEND_VP")
+            self.AddStep("SET_BLEND_VP", trinity.TriStepSetViewport(self.scr_vp_obj))
 
     def UpdateViewport(self, new_viewport):
         if not self.customDepthStencil:
             return
-        viewport = self.GetViewport()
+        viewport = self.scr_vp_obj
         if viewport is None or new_viewport.width != viewport.width or new_viewport.height != viewport.height:
+            self.SetViewport(new_viewport)
             self.SetSettingsBasedOnPerformancePreferences()
         else:
+            self.SetViewport(new_viewport)
+            self.UpdateBufferedViewports(new_viewport)
+            self.UpdateSteps()
             self.UpdatePostProcessingTexCoords()
+
+    def SetViewport(self, viewport):
+        """
+        Sets the main viewport.
+        """
+
+        if viewport is None:
+            self.RemoveStep("SET_VIEWPORT")
+            self.viewport = None
+        else:
+            self.viewport = blue.BluePythonWeakRef(viewport)
+            self.SetupBufferedViewports(viewport)
+
+    def _SetViewport(self, viewport):
+        self.AddStep("SET_VIEWPORT", trinity.TriStepSetViewport(viewport))
 
     def Enable(self, schedule=True):
         SceneRenderJobBase.Enable(self, schedule)
