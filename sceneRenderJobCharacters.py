@@ -11,6 +11,8 @@ import blue
 
 
 
+AA_SCALE_FACTOR = 4
+
 def CreateSceneRenderJobCharacters(name=None):
     """
     We can't use __init__ on a decorated class, so we provide a creation function that does it for us
@@ -52,6 +54,14 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         "RENDER_SCULPTING",  # This is actually a sub-renderjob
         "RESTORE_BACKBUFFER",
         "RESTORE_DEPTH_STENCIL",
+        "PUSH_RENDER_SCALE_RT",
+        "PUSH_RENDER_SCALE_DS",
+        "CLEAR_BB2",
+        "SET_SCALE_VP",
+        "SET_SCALESOURCE",
+        "RENDER_SCALE",
+        "POP_RENDER_SCALE_RT",
+        "POP_RENDER_SCALE_DS",
         "RESOLVE_IMAGE",
         "SET_BLENDSOURCE",
         "PUSH_RENDER_BLEND_RT",
@@ -139,6 +149,7 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         self.dx9_active = trinity.platform == "dx9"
         self.releasing = False
         self.rebuilding = False
+        self.rs_effect = None
 
     def _SetScene(self, scene):
         """
@@ -177,12 +188,7 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         """
         self.SetSettingsBasedOnPerformancePreferences()
 
-    def SetSettingsBasedOnPerformancePreferences(self):
-        if not self.enabled:
-            return
-
-        viewport = self.GetViewport()
-        self.SetStepAttr("CLEAR", "isColorCleared", True)
+    def GetMSAAType(self):
         if self.dx9_active:
             msaaType = 1
         elif sm.IsServiceRunning("device"):
@@ -190,6 +196,16 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             msaaType = sm.GetService("device").GetMSAATypeFromQuality(aaQuality)
         else:
             msaaType = 4
+
+        return msaaType
+
+    def SetSettingsBasedOnPerformancePreferences(self):
+        if not self.enabled:
+            return
+        print ("SetSettingsBasedOnPerformancePreferences started")
+        viewport = self.GetViewport()
+        self.SetStepAttr("CLEAR", "isColorCleared", True)
+        msaaType = self.GetMSAAType()
 
         self.msaaType = msaaType
 
@@ -213,7 +229,10 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         dsFormat = trinity.DEPTH_STENCIL_FORMAT.D24S8
 
         self.customBackBuffer = None
-        self.customDepthStencil = rtm.GetDepthStencilAL(width, height, dsFormat, msaaType)
+        if msaaType == 4 and viewport:
+            self.customDepthStencil = rtm.GetDepthStencilAL(width * AA_SCALE_FACTOR, height * AA_SCALE_FACTOR, dsFormat, msaaType)
+        else:
+            self.customDepthStencil = rtm.GetDepthStencilAL(width, height, dsFormat, msaaType)
         self.AddStep("SET_DEPTH_STENCIL", trinity.TriStepPushDepthStencil(self.customDepthStencil))
         self.AddStep("RESTORE_DEPTH_STENCIL", trinity.TriStepPopDepthStencil())
 
@@ -223,12 +242,38 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             if self.dx9_active:
                 self.customBackBuffer = rtm.GetRenderTargetAL(width, height, 1, bbFormat)
             else:
-                self.customBackBuffer = rtm.GetRenderTargetMsaaAL(width, height, bbFormat, msaaType, 0)
+                if msaaType == 4:
+                    self.customBackBuffer = rtm.GetRenderTargetMsaaAL(width * AA_SCALE_FACTOR, height * AA_SCALE_FACTOR, bbFormat, msaaType, 0)
+                    self.customBackBuffer2 = rtm.GetRenderTargetMsaaAL(width, height, bbFormat, msaaType, 0)
+                else:
+                    self.customBackBuffer = rtm.GetRenderTargetMsaaAL(width, height, bbFormat, msaaType, 0)
             self.AddStep("SET_BACKBUFFER", trinity.TriStepPushRenderTarget(self.customBackBuffer))
             self.AddStep("SET_BG_LAYER", trinity.TriStepCopyRenderTarget(self.bgBuffer, self.GetBackBufferRenderTarget(), self.local_vp_obj, self.scr_vp_obj))
             if msaaType <= 1:
                 self.AddStep("PLACE_BG", trinity.TriStepCopyRenderTarget(self.customBackBuffer, self.GetBackBufferRenderTarget(), self.local_vp_obj, self.scr_vp_obj))
-            self.AddStep("RESOLVE_IMAGE", trinity.TriStepResolve(self.blendsource, self.customBackBuffer))
+            if msaaType != 4:
+                self.AddStep("RESOLVE_IMAGE", trinity.TriStepResolve(self.blendsource, self.customBackBuffer))
+            else:
+                self.AddStep("RESOLVE_IMAGE", trinity.TriStepResolve(self.blendsource, self.customBackBuffer2))
+            if msaaType == 4:
+                self.AddStep("PUSH_RENDER_SCALE_RT", trinity.TriStepPushRenderTarget(self.customBackBuffer2))
+                self.AddStep("PUSH_RENDER_SCALE_DS", trinity.TriStepPushDepthStencil(None))
+                self.AddStep("CLEAR_BB2", trinity.TriStepClear((0.0, 0.0, 0.0, 0.0), 1.0))
+                self.SetStepAttr("CLEAR_BB2", "isColorCleared", True)
+                self.AddStep("SET_SCALE_VP", trinity.TriStepSetViewport(self.local_scale_vp_obj))
+                self.rs_effect = self.CreateRenderScaleEffect(self.customBackBuffer)
+                self.AddStep("RENDER_SCALE", trinity.TriStepRenderEffect(self.rs_effect))
+                self.AddStep("POP_RENDER_SCALE_RT", trinity.TriStepPopRenderTarget())
+                self.AddStep("POP_RENDER_SCALE_DS", trinity.TriStepPopDepthStencil())
+            else:
+                self.RemoveStep("PUSH_RENDER_SCALE_RT")
+                self.RemoveStep("PUSH_RENDER_SCALE_DS")
+                self.RemoveStep("CLEAR_BB2")
+                self.RemoveStep("SET_SCALE_VP")
+                self.RemoveStep("SET_SCALESOURCE")
+                self.RemoveStep("RENDER_SCALE")
+                self.RemoveStep("POP_RENDER_SCALE_RT")
+                self.RemoveStep("POP_RENDER_SCALE_DS")
             self.AddStep("PUSH_RENDER_BLEND_RT", trinity.TriStepPushRenderTarget(self.GetBackBufferRenderTarget()))
             self.AddStep("PUSH_RENDER_BLEND_DS", trinity.TriStepPushDepthStencil(None))
             self.AddStep("SET_BLITORIGINAL", trinity.TriStepSetVariableStore("BlitOriginal", self.bgBuffer))
@@ -285,10 +330,13 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         self.enabled = True
 
     def SetupBufferedViewports(self, viewport):
+        print("SetupBufferedViewports")
         width = 0
         height = 0
         scr_width = 0
         scr_height = 0
+
+        msaaType = self.GetMSAAType()
 
         if not viewport:
             width, height = self.GetBackBufferSize()
@@ -305,10 +353,22 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             self.local_vp = blue.BluePythonWeakRef(self.local_vp_obj)
             self.local_vp.object.x = 0
             self.local_vp.object.y = 0
-            self.local_vp.object.width = viewport.width
-            self.local_vp.object.height = viewport.height
+            if msaaType == 4:
+                self.local_vp.object.width = viewport.width * AA_SCALE_FACTOR
+                self.local_vp.object.height = viewport.height * AA_SCALE_FACTOR
+            else:
+                self.local_vp.object.width = viewport.width
+                self.local_vp.object.height = viewport.height
             self.local_vp.object.minZ = viewport.minZ
             self.local_vp.object.maxZ = viewport.maxZ
+            self.local_scale_vp_obj = trinity.TriViewport()
+            self.local_scale_vp = blue.BluePythonWeakRef(self.local_scale_vp_obj)
+            self.local_scale_vp.object.x = 0
+            self.local_scale_vp.object.y = 0
+            self.local_scale_vp.object.width = viewport.width
+            self.local_scale_vp.object.height = viewport.height
+            self.local_scale_vp.object.minZ = viewport.minZ
+            self.local_scale_vp.object.maxZ = viewport.maxZ
             scr_width, scr_height = self.GetBackBufferSize()
             width, height = viewport.width, viewport.height
             offsetX = viewport.x
@@ -335,19 +395,21 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             self.AddStep("PLACE_AVATAR", trinity.TriStepCopyRenderTarget(self.bgBuffer, self.GetBackBufferRenderTarget(), self.scr_vp_obj, self.local_vp_obj))
             self.RemoveStep("SET_BLEND_VP")
             self.AddStep("SET_BLEND_VP", trinity.TriStepSetViewport(self.scr_vp_obj))
+            self.RemoveStep("SET_PP_VIEWPORT")
+            self.AddStep("SET_PP_VIEWPORT", trinity.TriStepSetViewport(self.pp_viewport.object))
 
     def UpdateViewport(self, new_viewport):
-        if not self.customDepthStencil:
-            return
         viewport = self.scr_vp_obj
-        if viewport is None or new_viewport.width != viewport.width or new_viewport.height != viewport.height:
+        if viewport is None or new_viewport.width != viewport.width or new_viewport.height != viewport.height or self.msaaType != self.GetMSAAType() or self.customDepthStencil is None:
             self.SetViewport(new_viewport)
             self.SetSettingsBasedOnPerformancePreferences()
         else:
+            pass
             self.SetViewport(new_viewport)
             self.UpdateBufferedViewports(new_viewport)
             self.UpdateSteps()
             self.UpdatePostProcessingTexCoords()
+
 
     def SetViewport(self, viewport):
         """
@@ -426,6 +488,7 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
 
     def CreateRenderBlendEffect(self, msaaType):
         effect = trinity.Tr2Effect()
+        effect.StartUpdate()
         if msaaType > 1:
             effect.effectFilePath = "res:/graphics/Effect/Managed/Space/PostProcess/OriginalFade.fx"
         else:
@@ -434,5 +497,24 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         param.name = "Opacity"
         param.value = self.startOpacity
         effect.parameters.append(param)
+        effect.EndUpdate()
+        return effect
 
+
+    def CreateRenderScaleEffect(self, rt_buffer):
+        print("CreateRenderScaleEffect")
+        effect = trinity.Tr2Effect()
+        effect.StartUpdate()
+        effect.effectFilePath = "res:/graphics/Effect/Managed/Space/PostProcess/ScaleRT.fx"
+        param = trinity.Tr2Vector2Parameter()
+        param.name = "OutSize"
+        param.value = (self.scr_vp_obj.width, self.scr_vp_obj.height)
+        effect.parameters.append(param)
+
+
+        self.scaleSourceRes = trinity.TriTextureParameter()
+        self.scaleSourceRes.name = "ScaleSource"
+        self.scaleSourceRes.SetResource(trinity.TriTextureRes(rt_buffer))
+        effect.resources.append(self.scaleSourceRes)
+        effect.EndUpdate()
         return effect
