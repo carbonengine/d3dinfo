@@ -11,7 +11,7 @@ import blue
 
 
 
-AA_SCALE_FACTOR = 4
+AA_SCALE_FACTOR = 2
 
 def CreateSceneRenderJobCharacters(name=None):
     """
@@ -235,23 +235,24 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
 
         self.customBackBuffer = None
         if self.supersampling:
-            self.customDepthStencil = rtm.GetDepthStencilAL(width * AA_SCALE_FACTOR, height * AA_SCALE_FACTOR, dsFormat, msaaType)
+            self.customDepthStencil = rtm.GetDepthStencilAL(width * AA_SCALE_FACTOR, height * AA_SCALE_FACTOR, dsFormat, 1)
         else:
             self.customDepthStencil = rtm.GetDepthStencilAL(width, height, dsFormat, msaaType)
         self.AddStep("SET_DEPTH_STENCIL", trinity.TriStepPushDepthStencil(self.customDepthStencil))
         self.AddStep("RESTORE_DEPTH_STENCIL", trinity.TriStepPopDepthStencil())
 
         if viewport:
-            self.bgBuffer = rtm.GetRenderTargetAL(width, height, 1, bbFormat)
+            self.bgBuffer = rtm.GetRenderTargetAL(width, height, 1, bbFormat, index=2)
             self.blendsource = rtm.GetRenderTargetAL(width, height, 1, bbFormat, index=1)
             if self.dx9_active:
-                self.customBackBuffer = rtm.GetRenderTargetAL(width, height, 1, bbFormat)
+                self.customBackBuffer = rtm.GetRenderTargetAL(width, height, 1, bbFormat, index=3)
             else:
                 if self.supersampling:
-                    self.customBackBuffer = rtm.GetRenderTargetMsaaAL(width * AA_SCALE_FACTOR, height * AA_SCALE_FACTOR, bbFormat, msaaType, 0)
-                    self.customBackBuffer2 = rtm.GetRenderTargetMsaaAL(width, height, bbFormat, msaaType, 0)
+                    # NOTE that for AA_QUALITY_TAA_HIGH we are forcing MSAA to 1 with this even though the variable says 4!
+                    self.customBackBuffer = rtm.GetRenderTargetAL(width * AA_SCALE_FACTOR, height * AA_SCALE_FACTOR, 1, bbFormat, index=3)
+                    self.customBackBuffer2 = rtm.GetRenderTargetAL(width, height, 1, bbFormat, index=4)
                 else:
-                    self.customBackBuffer = rtm.GetRenderTargetMsaaAL(width, height, bbFormat, msaaType, 0)
+                    self.customBackBuffer = rtm.GetRenderTargetMsaaAL(width, height, bbFormat, msaaType, 0, index=3)
             self.AddStep("SET_BACKBUFFER", trinity.TriStepPushRenderTarget(self.customBackBuffer))
             self.AddStep("SET_BG_LAYER", trinity.TriStepCopyRenderTarget(self.bgBuffer, self.GetBackBufferRenderTarget(), self.local_vp_obj, self.scr_vp_obj))
             if msaaType <= 1:
