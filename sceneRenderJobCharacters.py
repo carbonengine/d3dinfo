@@ -295,7 +295,7 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             self.AddStep("SET_BACKBUFFER", trinity.TriStepPushRenderTarget(self.customBackBuffer))
             self.AddStep("SET_BG_LAYER", trinity.TriStepCopyRenderTarget(self.bgBuffer, self.GetBackBufferRenderTarget(), self.cropped_local_vp_obj, self.cropped_scr_vp_obj))
             if msaaType <= 1:
-                self.AddStep("PLACE_BG", trinity.TriStepCopyRenderTarget(self.customBackBuffer, self.GetBackBufferRenderTarget(), self.local_vp_obj, self.scr_vp_obj))
+                self.AddStep("PLACE_BG", trinity.TriStepCopyRenderTarget(self.customBackBuffer, self.GetBackBufferRenderTarget(), self.cropped_local_vp_obj, self.cropped_scr_vp_obj))
             if not self.supersampling:
                 self.AddStep("RESOLVE_IMAGE", trinity.TriStepResolve(self.blendsource, self.customBackBuffer))
             else:
@@ -419,7 +419,7 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             self.RemoveStep("PLACE_BG")
             self.AddStep("SET_BG_LAYER", trinity.TriStepCopyRenderTarget(self.bgBuffer, self.GetBackBufferRenderTarget(), self.cropped_local_vp_obj, self.cropped_scr_vp_obj))
             if self.msaaType <= 1:
-                self.AddStep("PLACE_BG", trinity.TriStepCopyRenderTarget(self.customBackBuffer, self.GetBackBufferRenderTarget(), self.local_vp_obj, self.scr_vp_obj))
+                self.AddStep("PLACE_BG", trinity.TriStepCopyRenderTarget(self.customBackBuffer, self.GetBackBufferRenderTarget(), self.cropped_local_vp_obj, self.cropped_scr_vp_obj))
             self.RemoveStep("PLACE_AVATAR")
             self.AddStep("PLACE_AVATAR", trinity.TriStepCopyRenderTarget(self.bgBuffer, self.GetBackBufferRenderTarget(), self.scr_vp_obj, self.local_vp_obj))
             self.RemoveStep("SET_BLEND_VP")
