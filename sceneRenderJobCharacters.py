@@ -554,3 +554,9 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         effect.resources.append(self.scaleSourceRes)
         effect.EndUpdate()
         return effect
+
+    def RebuildPostprocess(self):
+        self.postProcess = None
+        self.RemoveStep("SET_PP_VIEWPORT")
+        self.RemoveStep("RJ_POSTPROCESSING")
+        self.setupPostProcess()
