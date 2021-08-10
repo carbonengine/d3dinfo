@@ -621,5 +621,5 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             if curveSet.name == "ScrambleCurveSet":
                 scrambleCurveSet = curveSet
 
-        if scrambleCurveSet is None:
+        if scrambleCurveSet is None and hasattr(self, 'scrambleCurveSet') and self.scrambleCurveSet is not None:
             scene.curveSets.append(self.scrambleCurveSet)
