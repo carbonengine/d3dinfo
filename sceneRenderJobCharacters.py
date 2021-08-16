@@ -118,7 +118,7 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         else:
             self.pp_viewport.object.height = self.viewport.object.height
 
-    def _UpdatePostProcessingTexCoords(self):
+    def UpdatePostProcessingTexCoords_t(self):
         blue.synchro.Yield()
         if self.postProcess is not None:
             step = None
@@ -126,29 +126,43 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             while step is None and attempts < 50:
                 step = grading.GetLUTStepRenderEffect(self.postProcess.GetJob())
                 if step is None:
-                    blue.synchro.Sleep(10)
+                    blue.synchro.Yield()
 
             if step is None:
                 return
 
-            texcoords = None
-            if hasattr(self, "pp_viewport") and hasattr(self, 'resolveTargetDimensions') and hasattr(self, 'viewport')\
-                    and self.viewport is not None and self.viewport.object is not None and step is not None and \
-                    self.pp_viewport is not None and self.pp_viewport.object is not None:
-                self.derive_pp_viewport()
-                texcoords_top = float(self.pp_viewport.object.y) / self.resolveTargetDimensions[1]
-                texcoords_left = float(self.pp_viewport.object.x) / self.resolveTargetDimensions[0]
-                texcoords_bottom = float(self.pp_viewport.object.y + self.pp_viewport.object.height) / self.resolveTargetDimensions[1]
-                texcoords_right = float(self.pp_viewport.object.x + self.pp_viewport.object.width) / self.resolveTargetDimensions[0]
-                texcoords = (texcoords_left, texcoords_top, texcoords_right, texcoords_bottom)
-            if texcoords is not None:
-                step.tlTexCoord = (texcoords[0], texcoords[1])
-                step.brTexCoord = (texcoords[2], texcoords[3])
+            self._UpdatePostProcessingTexCoords(step)
 
-                self.postProcess.UpdateViewport(self.pp_viewport.object)
 
-    def UpdatePostProcessingTexCoords(self):
-        uthread.new(self._UpdatePostProcessingTexCoords)
+    def _UpdatePostProcessingTexCoords(self, step):
+        texcoords = None
+        if hasattr(self, "pp_viewport") and hasattr(self, 'resolveTargetDimensions') and hasattr(self, 'viewport') \
+                and self.viewport is not None and self.viewport.object is not None and step is not None and \
+                self.pp_viewport is not None and self.pp_viewport.object is not None:
+            self.derive_pp_viewport()
+            texcoords_top = float(self.pp_viewport.object.y) / self.resolveTargetDimensions[1]
+            texcoords_left = float(self.pp_viewport.object.x) / self.resolveTargetDimensions[0]
+            texcoords_bottom = float(self.pp_viewport.object.y + self.pp_viewport.object.height) / \
+                               self.resolveTargetDimensions[1]
+            texcoords_right = float(self.pp_viewport.object.x + self.pp_viewport.object.width) / \
+                              self.resolveTargetDimensions[0]
+            texcoords = (texcoords_left, texcoords_top, texcoords_right, texcoords_bottom)
+        if texcoords is not None:
+            step.tlTexCoord = (texcoords[0], texcoords[1])
+            step.brTexCoord = (texcoords[2], texcoords[3])
+
+            self.postProcess.UpdateViewport(self.pp_viewport.object)
+
+        self.enabled = True
+
+
+    def UpdatePostProcessingTexCoords(self, async=False):
+        if async:
+            uthread.new(self.UpdatePostProcessingTexCoords_t)
+        else:
+            if self.postProcess is not None:
+                step = grading.GetLUTStepRenderEffect(self.postProcess.GetJob())
+                self._UpdatePostProcessingTexCoords(step)
 
 
     def _ManualInit(self, name="SceneRenderJobCharacters"):
@@ -244,7 +258,7 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             width, height = self.GetBackBufferSize()
             self.SetupDX9Passes(viewport, width, height, msaaType)
 
-        self.UpdatePostProcessingTexCoords()
+        self.UpdatePostProcessingTexCoords(async=True)
 
 
     def CropVPObj(self, viewport_obj, target_vp_obj):
@@ -354,7 +368,7 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
                 self.AddStep("RESTORE_BACKBUFFER", trinity.TriStepPopRenderTarget())
                 self.AddStep("RESOLVE_IMAGE", trinity.TriStepResolve(self.GetBackBufferRenderTarget(), self.customBackBuffer))
 
-        self.enabled = True
+            self.enabled = True
 
     def SetupDX9Passes(self, viewport, width, height, msaaType):
 
