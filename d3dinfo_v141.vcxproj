@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug_Stackless|Win32">
@@ -86,11 +86,11 @@
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
       <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;BLUEBUILD_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;..\..\..\carbon\src\stackless\pc;..;..\BlueExposure\include;..\..\..\vendor\telemetry\3.5.0.13\include;.;..\..\..\vendor\directx\February2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;..\..\..\carbon\src\stackless\pc;..;..\BlueExposure\include;..\..\..\vendor\telemetry\3.5.0.19\include;.;..\..\..\vendor\directx\February2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>True</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\..\carbon\autobuild\CcpCore\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\BlueExposure\exefile\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);..\..\..\vendor\telemetry\3.5.0.13\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\carbon\autobuild\CcpCore\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\BlueExposure\exefile\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);..\..\..\vendor\telemetry\3.5.0.19\lib\Windows\$(Platform)\$(PlatformToolset);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
       <AdditionalDependencies>python27.lib;BlueExposureStatic.lib;CcpCoreStatic.lib;psapi.lib;rad_tm_win64.lib</AdditionalDependencies>
     </Link>
@@ -102,11 +102,11 @@
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
       <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;BLUEBUILD_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;..\..\..\carbon\src\stackless\pc;..;..\BlueExposure\include;..\..\..\vendor\telemetry\3.5.0.13\include;.;..\..\..\vendor\directx\February2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;..\..\..\carbon\src\stackless\pc;..;..\BlueExposure\include;..\..\..\vendor\telemetry\3.5.0.19\include;.;..\..\..\vendor\directx\February2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>True</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\..\carbon\autobuild\CcpCore\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\BlueExposure\exefile\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);..\..\..\vendor\telemetry\3.5.0.13\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\carbon\autobuild\CcpCore\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\BlueExposure\exefile\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);..\..\..\vendor\telemetry\3.5.0.19\lib\Windows\$(Platform)\$(PlatformToolset);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
       <AdditionalDependencies>python27.lib;BlueExposureStatic.lib;CcpCoreStatic.lib;psapi.lib;rad_tm_win32.lib</AdditionalDependencies>
     </Link>
@@ -116,16 +116,17 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PreprocessorDefinitions>_DEBUG;BLUE_WITH_PYTHON=1;BLUEBUILD_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;..\..\..\carbon\src\stackless\pc;..;..\BlueExposure\include;..\..\..\vendor\telemetry\3.5.0.13\include;.;..\..\..\vendor\directx\February2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;..\..\..\carbon\src\stackless\pc;..;..\BlueExposure\include;..\..\..\vendor\telemetry\3.5.0.19\include;.;..\..\..\vendor\directx\February2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>True</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\..\carbon\autobuild\CcpCore\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\BlueExposure\exefile\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);..\..\..\vendor\telemetry\3.5.0.13\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\carbon\autobuild\CcpCore\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\BlueExposure\exefile\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);..\..\..\vendor\telemetry\3.5.0.19\lib\Windows\$(Platform)\$(PlatformToolset);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
       <AdditionalDependencies>python27_d.lib;BlueExposureStatic_d.lib;CcpCoreStatic_d.lib;psapi.lib;rad_tm_win64_d.lib</AdditionalDependencies>
     </Link>
@@ -135,17 +136,18 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PreprocessorDefinitions>_DEBUG;BLUE_WITH_PYTHON=1;BLUEBUILD_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;..\..\..\carbon\src\stackless\pc;..;..\BlueExposure\include;..\..\..\vendor\telemetry\3.5.0.13\include;.;..\..\..\vendor\directx\February2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;..\..\..\carbon\src\stackless\pc;..;..\BlueExposure\include;..\..\..\vendor\telemetry\3.5.0.19\include;.;..\..\..\vendor\directx\February2010\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <Optimization>Disabled</Optimization>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>True</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\..\carbon\autobuild\CcpCore\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\BlueExposure\exefile\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);..\..\..\vendor\telemetry\3.5.0.13\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\carbon\autobuild\CcpCore\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\BlueExposure\exefile\$(Platform)\$(PlatformToolset);..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);..\..\..\vendor\telemetry\3.5.0.19\lib\Windows\$(Platform)\$(PlatformToolset);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
       <AdditionalDependencies>python27_d.lib;BlueExposureStatic_d.lib;CcpCoreStatic_d.lib;psapi.lib;rad_tm_win32_d.lib</AdditionalDependencies>
     </Link>

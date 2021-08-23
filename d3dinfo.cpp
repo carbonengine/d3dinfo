@@ -6,6 +6,5 @@
 //
 
 #include "StdAfx.h"
-#include "InterfaceDefinitions.cxx" //BlueExposure IRoot
 
-BLUE_STANDARD_MODULE_INIT( d3dinfo );
+BLUE_STANDARD_MODULE_INIT( _d3dinfo );
