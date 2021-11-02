@@ -498,7 +498,6 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             self.AddStep("SET_PP_VIEWPORT", trinity.TriStepSetViewport(self.pp_viewport.object))
 
     def UpdateViewport(self, new_viewport):
-        print("sceneRenderJobCharacters: Updating viewport %s" % str((new_viewport.x, new_viewport.y, new_viewport.height, new_viewport.width)))
         if not hasattr(self, 'scr_vp_obj') or not hasattr(self, 'local_vp_obj') or self.scr_vp_obj is None or self.local_vp_obj is None:
             return
         viewport = self.scr_vp_obj
