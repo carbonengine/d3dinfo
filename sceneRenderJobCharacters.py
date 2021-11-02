@@ -102,6 +102,8 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         lut = grading.GetTexLUT(self)
         if lut is not None:
             lut.resourcePath = self.lut_res_path
+        self.UpdatePostProcessingTexCoords(async=False)
+
 
     def derive_pp_viewport(self):
         self.pp_viewport.object.x = min(max(self.viewport.object.x, 0), self.resolveTargetDimensions[0])
@@ -124,14 +126,14 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             self.pp_viewport.object.height = self.viewport.object.height
 
     def UpdatePostProcessingTexCoords_t(self):
-        blue.synchro.Yield()
+        blue.synchro.Sleep(0)
         if self.postProcess is not None:
             step = None
             attempts = 0
             while step is None and attempts < 50:
                 step = grading.GetLUTStepRenderEffect(self.postProcess.GetJob())
                 if step is None:
-                    blue.synchro.Yield()
+                    blue.synchro.Sleep(0)
 
             if step is None:
                 return
@@ -496,6 +498,7 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             self.AddStep("SET_PP_VIEWPORT", trinity.TriStepSetViewport(self.pp_viewport.object))
 
     def UpdateViewport(self, new_viewport):
+        print("sceneRenderJobCharacters: Updating viewport %s" % str((new_viewport.x, new_viewport.y, new_viewport.height, new_viewport.width)))
         if not hasattr(self, 'scr_vp_obj') or not hasattr(self, 'local_vp_obj') or self.scr_vp_obj is None or self.local_vp_obj is None:
             return
         viewport = self.scr_vp_obj
