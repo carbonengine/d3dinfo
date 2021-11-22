@@ -858,8 +858,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         else:
             step.quality = 0
 
-        step.enabled = step.quality != 0 or self.antiAliasingEnabled
-
     def ApplyPerformancePreferencesToScene(self):
         self._SetShadowMap()
         self._SetDepthMap()
@@ -937,8 +935,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
                     else:
                         scene.postprocess.taa = None
 
-                self.AddStep("FINAL_BLIT",
-                             trinity.TriStepRenderPostProcess(self.GetScene(), self._GetSourceRTForPostProcessing()))
+        self.AddStep("FINAL_BLIT",
+                     trinity.TriStepRenderPostProcess(self.GetScene(), self._GetSourceRTForPostProcessing()))
 
         if customDepthStencil is not None:
             self.AddStep("SET_DEPTH", trinity.TriStepPushDepthStencil(customDepthStencil))
