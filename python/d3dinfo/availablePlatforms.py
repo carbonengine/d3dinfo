@@ -10,27 +10,6 @@ except ImportError:
     d3dinfo = None
 
 
-def IsD3D9Valid():
-    """
-    Returns True if Direct3D9 is available.
-    """
-    if not d3dinfo:
-        return True
-        
-    isOK = False
-    d3d = d3dinfo.D3D9Info()
-    try:
-        d3d.InitializeD3D()
-        adapterCount = d3d.GetAdapterCount()
-        if adapterCount > 0:
-            isOK = True
-        d3d.ShutdownD3D()
-    except RuntimeError:
-        pass
-
-    return isOK
-
-
 def IsD3D11Valid():
     """
     Returns True if Direct3D11 is available.
@@ -82,8 +61,6 @@ def GetAvailablePlatforms():
     if sys.platform.startswith("darwin"):
         platforms.append("metal")
     else:
-        if IsD3D9Valid():
-            platforms.append("dx9")
         if IsD3D11Valid():
             platforms.append("dx11")
         if IsD3D12Valid():
@@ -120,7 +97,7 @@ def InstallSystemBinaries(fileName):
 
 
 def InstallDirectXIfNeeded():
-    if not IsD3D9Valid():
+    if not IsD3D11Valid():
         # Install appropriate redist
         import imp
         if imp.get_suffixes()[0][0] == '_d.pyd':

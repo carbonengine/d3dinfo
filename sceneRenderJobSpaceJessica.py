@@ -8,7 +8,7 @@ from . import _singletons
 from .sceneRenderJobSpace import SceneRenderJobSpace
 
 
-def CreateJessicaSpaceRenderJob(name=None, stageKey=None):
+def CreateJessicaSpaceRenderJob(name=None):
     """
     We can't use __init__ on a decorated class, so we provide a creation function that does it for us
     """
@@ -17,11 +17,10 @@ def CreateJessicaSpaceRenderJob(name=None, stageKey=None):
         newRJ.ManualInit(name)
     else:
         newRJ.ManualInit()
-
-    newRJ.SetMultiViewStage(stageKey)
     return newRJ
-    
 
+
+# noinspection PyAttributeOutsideInit
 class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
     """ Jessica/Maya version of the space render job. """
     def _ManualInit(self, name="SceneRenderJobSpace"):
@@ -43,15 +42,15 @@ class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
     def GetSettings(self):
         return self.settings
 
-    def GetMultiSampleTypeFromQuality(self, quality):
-        pp = _singletons.device.GetPresentParameters()
-        windowed = pp["Windowed"]
+    def GetMSAATypeFromQuality(self, quality):
+        if quality == 0:
+            return 0
         msaaTypes = [0]
         # Not all cards support MSAA with hdr so we have to check for that.
         fmt = trinity.PIXEL_FORMAT.R16G16B16A16_FLOAT if self.hdrEnabled else self.bbFormat
 
         def Supported(msType):
-            return _singletons.adapters.GetRenderTargetMsaaSupport(_singletons.device.adapter, fmt, windowed, msType)
+            return _singletons.adapters.GetRenderTargetMsaaSupport(_singletons.device.adapter, fmt, msType)
 
         if Supported(2):
             msaaTypes.append(2)
@@ -66,12 +65,6 @@ class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
             quality = len(msaaTypes) - 1
 
         return msaaTypes[quality]
-
-    def GetMSAATypeFromQuality(self, aaQuality):
-        if aaQuality == 0:
-            return 0
-        
-        return self.GetMultiSampleTypeFromQuality(aaQuality)
 
     def _RefreshAntiAliasing(self):
         self.EnableMSAA(self.antiAliasingEnabled)
@@ -101,8 +94,8 @@ class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
         else:
             self.shadowMap.size = self.settings["shadowMapSize"]
 
-    def SetRenderTargets(self, *args):
-        SceneRenderJobSpace.SetRenderTargets(self, *args)
+    def _RefreshRenderTargets(self):
+        SceneRenderJobSpace._RefreshRenderTargets(self)
 
         if self.depthBufferOverride:
             self.AddStep("SET_SWAPCHAIN_DEPTH", trinity.TriStepPushDepthStencil(self.depthBufferOverride))
@@ -123,12 +116,6 @@ class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
         height = self.backBufferOverride.height
 
         return width, height
-
-    def _GetRTForDepthPass(self):
-        if self.backBufferOverride is not None:
-            return self.backBufferOverride
-
-        return SceneRenderJobSpace._GetRTForDepthPass(self)
 
     def GetBackBufferRenderTarget(self):
         """

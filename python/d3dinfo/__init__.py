@@ -132,11 +132,6 @@ def _StoreGPUInfoInCrashHeaders():
             blue.SetCrashKeyValues("GPU_Driver_Version", str(adapterInfo.driverVersion))
     except RuntimeError:
         pass
-    except SystemError:
-        # TODO: A simple hack to deal with machines that can't support DX11
-        if platform == "dx11":
-            import log
-            log.Quit("Video card may not support DX11 - setting preferred platform to DX9")
 
 
 # These are helper functions which are used by eve insider and some
@@ -244,13 +239,8 @@ def CreatePythonBinding(cs, src, srcAttr, dst, dstAttr):
 def IsMsaaTypeSupported(msaa_type, formats):
     supported = True
     for surface_format in formats:
-        windowed = app.GetWindowState().windowMode != _trinity.Tr2WindowMode.FULL_SCREEN
-        args = device.adapter, surface_format[0], windowed, msaa_type
         try:
-            if surface_format[1]:
-                quality_levels = adapters.GetRenderTargetMsaaSupport(*args)
-            else:
-                quality_levels = adapters.GetDepthStencilMsaaSupport(*args)
+            quality_levels = adapters.GetRenderTargetMsaaSupport(device.adapter, surface_format, msaa_type)
         except _trinity.ALInvalidCallError:
             quality_levels = 0
         supported = supported and quality_levels

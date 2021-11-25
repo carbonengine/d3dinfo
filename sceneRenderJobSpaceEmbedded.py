@@ -10,7 +10,7 @@ from .renderJob import CreateRenderJob
 
 logger = logging.getLogger(__name__)
 
-def CreateEmbeddedRenderJobSpace(name=None, stageKey=None,usePostProcessing=True):
+def CreateEmbeddedRenderJobSpace(name=None, usePostProcessing=True):
     """
     We can't use __init__ on a decorated class, so we provide a creation function that does it for us
     """
@@ -21,8 +21,6 @@ def CreateEmbeddedRenderJobSpace(name=None, stageKey=None,usePostProcessing=True
         newRJ.ManualInit()
 
     newRJ.embeddedPostprocessing = usePostProcessing
-
-    newRJ.SetMultiViewStage(stageKey)
     return newRJ
 
 
@@ -60,7 +58,6 @@ class SceneRenderJobSpaceEmbedded(SceneRenderJobSpace):
         self.doFinalBlit = True
 
         self.offscreenRenderTarget = None
-        self.offscreenDepthStencil = None
         self.finalTexture = None
 
         self.rtWidth = 0
@@ -104,7 +101,6 @@ class SceneRenderJobSpaceEmbedded(SceneRenderJobSpace):
         self._RefreshRenderTargets()
 
     def _DoPrepareResources(self):
-        self.useDepth = trinity.GetShaderModel().endswith("DEPTH")
         self.prepared = True
 
         self.SetSettingsBasedOnPerformancePreferences()
@@ -118,7 +114,6 @@ class SceneRenderJobSpaceEmbedded(SceneRenderJobSpace):
     def DoReleaseResources(self, level):
         self.finalTexture = None
         self.offscreenRenderTarget = None
-        self.offscreenDepthStencil = None
         self.blitMapParameter.SetResource(None)
 
         SceneRenderJobSpace.DoReleaseResources(self, level)
@@ -129,14 +124,9 @@ class SceneRenderJobSpaceEmbedded(SceneRenderJobSpace):
         This function may raise exceptions attempting to create resources!
         NB: Will need to be changed to allow other sources to provide the buffers
         """
-        if not self.enabled or not self.canCreateRenderTargets:
+        if not self.enabled:
             return
-
-        try:
-            self._DoPrepareResources()
-        except trinity.D3DERR_OUTOFVIDEOMEMORY:
-            log.LogException()
-            self.DoReleaseResources(1)
+        self._DoPrepareResources()
 
     def _GetSourceRTForPostProcessing(self):
         if self.msaaEnabled or self.hdrEnabled:
@@ -160,20 +150,14 @@ class SceneRenderJobSpaceEmbedded(SceneRenderJobSpace):
             self.finalTexture = self.offscreenRenderTarget
         else:
             self.finalTexture = trinity.Tr2RenderTarget(vp.width, vp.height, 1, self.customBackBuffer.format)
-
-
-        if self.customDepthStencil is None:
-            self.offscreenDepthStencil = trinity.Tr2DepthStencil(
-                vp.width, vp.height, trinity.DEPTH_STENCIL_FORMAT.AUTO)
-
         self.finalTexture.name = 'finalTexture'
 
 
     def _UsePostProcessingEmbedded(self):
         return self.usePostProcessing and self.embeddedPostprocessing
 
-    def SetRenderTargets(self, *args):
-        SceneRenderJobSpace.SetRenderTargets(self, *args)
+    def _RefreshRenderTargets(self):
+        SceneRenderJobSpace._RefreshRenderTargets(self)
 
         self.RemoveStep("PUSH_RENDER_TARGET")
         self.RemoveStep("PUSH_DEPTH_STENCIL")
@@ -196,10 +180,6 @@ class SceneRenderJobSpaceEmbedded(SceneRenderJobSpace):
                 vpOrigin = trinity.TriViewport(0, 0, viewport.width, viewport.height)
                 vpStep.viewport = vpOrigin
                 self._SetUpdateStep(vpStep, "SET_VIEWPORT")
-
-        if self.offscreenDepthStencil:
-            self.AddStep("PUSH_DEPTH_STENCIL", trinity.TriStepPushDepthStencil(self.offscreenDepthStencil))
-            self.AddStep("POP_DEPTH_STENCIL", trinity.TriStepPopDepthStencil())
 
         if self.offscreenRenderTarget:
             self.AddStep("PUSH_RENDER_TARGET", trinity.TriStepPushRenderTarget(self.offscreenRenderTarget))
@@ -245,12 +225,6 @@ class SceneRenderJobSpaceEmbedded(SceneRenderJobSpace):
         if viewport.width != self.rtWidth or viewport.height != self.rtHeight:
             self._CreateRenderTargets()
             self._RefreshRenderTargets()
-
-    def _GetRTForDepthPass(self):
-        if self.finalTexture is not None:
-            return self.finalTexture
-
-        return SceneRenderJobSpace._GetRTForDepthPass(self)
 
     def ApplyBaseSettings(self):
         SceneRenderJobSpace.ApplyBaseSettings(self)

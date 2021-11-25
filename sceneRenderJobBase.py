@@ -1,19 +1,12 @@
 import blue
 import decometaclass
-import geo2
 
 from . import _singletons
 from . import _trinity as trinity
-from .renderJobUtils import renderTargetManager as rtm
 from .renderJob import renderJobs
 
-try:
-    import stackless
-    usingStackless = True
-except ImportError:
-    usingStackless = False
 
-
+# noinspection PyAttributeOutsideInit
 class SceneRenderJobBase(object):
     __cid__       = "trinity.TriRenderJob"
     __metaclass__ = decometaclass.BlueWrappedMetaclass
@@ -22,11 +15,7 @@ class SceneRenderJobBase(object):
     # You must populate this on child classes
     renderStepOrder = []
 
-    # This is a template for creating quad and multi-view renderjobs
-    # it breaks things down into passes, with shared steps in between
-    multiViewStages = None
     visualizations = []
-    stereoEnabled = False
 
     def Start(self):
         """
@@ -71,7 +60,7 @@ class SceneRenderJobBase(object):
             self.enabled = True
             try:
                 self.DoPrepareResources()
-            except trinity.D3DError:
+            except trinity.ALError:
                 pass
                           
         renderJobs.once.append(self)
@@ -81,10 +70,7 @@ class SceneRenderJobBase(object):
         Block until this job has finished.
         """
         while not ((self.status == trinity.RJ_DONE) or (self.status == trinity.RJ_FAILED)):
-            if usingStackless:
-                blue.synchro.Yield()
-            else:
-                blue.os.Pump()
+            blue.synchro.Yield()
 
     def Disable(self):
         """
@@ -103,46 +89,10 @@ class SceneRenderJobBase(object):
         self.enabled = True
         try:
             self.DoPrepareResources()
-        except trinity.D3DError:
+        except trinity.ALError:
             pass
         if schedule:
             self.Start()
-
-    def GetRenderStepOrderList(self):
-        """
-        Gets the list of steps to use to determine where to add a new step.
-        In particular, this allows us to use different render steps for multi-view stages
-        """
-        if self.multiViewStages is not None and self.currentMultiViewStageKey is not None: 
-            for stageName, sharedSetupStep, stepList in self.multiViewStages : 
-                if stageName == self.currentMultiViewStageKey:
-                    return stepList
-            return None
-
-        return self.renderStepOrder
-
-    def _AddStereoStep(self, step):
-        """
-        Adds the given step the second time for the right eye. Assumes that the step
-        was already inserted into correct position in the steps list for the left eye.
-        If the stereoEnabled flag is False the function does nothing.
-        """
-        if not self.stereoEnabled:
-            return
-        index = self.steps.index(step)
-        startLeft = -1
-        startRight = -1
-        for i, step in enumerate(self.steps):
-            if step.name == "UPDATE_STEREO":
-                startLeft = i
-            elif step.name == "UPDATE_STEREO_RIGHT":
-                startRight = i
-        if startLeft < 0 or startRight < 0:
-            return
-        if index > startLeft and index < startRight:
-            self.steps.insert(startRight + index - startLeft, step)
-        elif index > startRight:
-            self.steps.insert(startLeft + index - startRight, step)
 
     def AddStep(self, stepKey, step):
         """
@@ -153,7 +103,7 @@ class SceneRenderJobBase(object):
         """
         
         # Render order may be different if we're doing a multi-view rendering setup
-        renderStepOrder = self.GetRenderStepOrderList()
+        renderStepOrder = self.renderStepOrder
         
         # Invalid multi-step stage setting
         if renderStepOrder is None:
@@ -182,7 +132,6 @@ class SceneRenderJobBase(object):
                     self.steps.insert(replaceIdx, step)
                     step.name = stepKey
                     self.stepsLookup[stepKey] = blue.BluePythonWeakRef(step)
-                    self._AddStereoStep(step)
                     return step
 
         # Step does not exist already, unless a user inserted it manually
@@ -202,16 +151,12 @@ class SceneRenderJobBase(object):
             self.steps.insert(insertPosition, step)
             step.name = stepKey
             self.stepsLookup[ stepKey ] = blue.BluePythonWeakRef(step)            
-            
-            self._AddStereoStep(step)
-            
             return step
         else:
             # use the dictionary key as the name
             step.name = stepKey
             self.stepsLookup[ stepKey ] = blue.BluePythonWeakRef(step)
             self.steps.append(step)
-            self._AddStereoStep(step)
             # return the step in case anyone needs to do more setup
             return step
 
@@ -306,10 +251,8 @@ class SceneRenderJobBase(object):
         self.stepsLookup = {}
         self.enabled = False
         self.scheduled = False
-        self.canCreateRenderTargets = True
 
         self.appliedVisualization = None
-        self.currentMultiViewStageKey = None
 
         self.view = None
         self.projection = None
@@ -355,38 +298,6 @@ class SceneRenderJobBase(object):
 
         self._CreateBasicRenderSteps()
 
-    def SetRenderTargetCreationEnabled(self, enabled):
-        self.canCreateRenderTargets = enabled
-
-        if enabled:
-            try:
-                self.DoPrepareResources()
-            except trinity.D3DError:
-                pass
-
-    def SetMultiViewStage(self, stageKey):
-        self.currentMultiViewStageKey = stageKey
-        
-        # Make sure to clear out any steps that do not match the stage key
-        validStepList = self.GetRenderStepOrderList()
-
-        if validStepList:
-            for stepID in self.stepsLookup.keys():
-                if stepID not in validStepList:
-                    self.RemoveStep(stepID)
-
-    def GetRenderTargets(self):
-        """
-        This function returns the a tuple of render targets that SetRenderTargets takes as a parameter
-        """
-        raise NotImplementedError("You must provide an implementation of GetRenderTargets(self)")
-
-    def SetRenderTargets(self):
-        """
-        This function takes as a parameter the returned *tuple from GetRenderTargets
-        """
-        raise NotImplementedError("You must provide an implementation of SetRenderTargets(self, ...)")
-
     def SetViewport(self, viewport):
         """
         Sets the main viewport.
@@ -426,10 +337,7 @@ class SceneRenderJobBase(object):
             self.projection = None
         else:
             self.AddStep("SET_PROJECTION", trinity.TriStepSetProjection(proj))
-            if self.stereoEnabled:
-                self.originalProjection = blue.BluePythonWeakRef(proj)
-            else:
-                self.projection = blue.BluePythonWeakRef(proj)
+            self.projection = blue.BluePythonWeakRef(proj)
 
     def GetCameraProjection(self):
         """
@@ -459,85 +367,6 @@ class SceneRenderJobBase(object):
         step = self.GetStep("CLEAR")
         if step is not None:
             step.color = color        
-    
-    def _StereoUpdateViewProjection(self, eye):
-        """
-        A TriStepPythonCB callback function to update projection matrix for the given eye
-        (left or right).
-        """
-        if self.originalProjection.object.transform[2][3] != 0:
-            offset = trinity.stereoSupport.GetEyeSeparation() * trinity.stereoSupport.GetSeparation()
-            if eye == trinity.STEREO_EYE_LEFT:
-                offset = -offset
-            projection = (self.originalProjection.object.transform[0],
-                          self.originalProjection.object.transform[1],
-                          geo2.Vec4Add(self.originalProjection.object.transform[2], (-offset, 0, 0, 0)),
-                          geo2.Vec4Add(self.originalProjection.object.transform[3], (-offset * trinity.stereoSupport.GetConvergence(), 0, 0, 0))
-                         )
-
-            self.projection.object.CustomProjection(projection)
-            
-            trinity.stereoSupport.SetActiveEye(eye)
-
-    def EnableStereo(self, enable):
-        """
-        Enable/disable stereo rendering in this render job.
-        """
-        if enable == self.stereoEnabled:
-            return True
-            
-        if enable:
-            def leftCallback():
-                return self._StereoUpdateViewProjection(trinity.STEREO_EYE_LEFT)
-            
-            def rightCallback():
-                return self._StereoUpdateViewProjection(trinity.STEREO_EYE_RIGHT)
-                
-            leftUpdate = self.AddStep("UPDATE_STEREO", trinity.TriStepPythonCB())
-            if leftUpdate is None:
-                return False
-            leftUpdate.SetCallback(leftCallback)
-
-            self.originalProjection = self.projection
-            self.stereoProjection = trinity.TriProjection()
-
-            self.SetCameraProjection(self.stereoProjection)
-            
-            rightUpdate = trinity.TriStepPythonCB()
-            rightUpdate.name = "UPDATE_STEREO_RIGHT"
-            rightUpdate.SetCallback(rightCallback)
-            self.steps.append(rightUpdate)
-                
-            index = -1
-            try:
-                index = self.steps.index(self.GetStep("UPDATE_STEREO"))
-            except:
-                pass
-            if index >= 0:
-                count = len(self.steps)
-                for i in range(index + 1, count - 1):
-                    step = self.steps[i]
-                    self.steps.append(step)
-
-            self.stereoEnabled = True
-        else:
-            index = -1
-            for i, step in enumerate(self.steps):
-                if step.name == "UPDATE_STEREO_RIGHT":
-                    index = i
-                    break
-            if index >= 0:
-                while len(self.steps) > index:
-                    self.steps.removeAt(index)
-                
-            self.stereoEnabled = False
-
-            self.RemoveStep("UPDATE_STEREO")
-
-            self.SetCameraProjection(self.originalProjection.object)
-
-
-        return True
 
     def SetSwapChain(self, swapChain):
         """
@@ -575,8 +404,8 @@ class SceneRenderJobBase(object):
                 width = self.GetSwapChain().width
                 height = self.GetSwapChain().height
         else:    
-            width = _singletons.device.GetPresentParameters()['BackBufferWidth']
-            height = _singletons.device.GetPresentParameters()['BackBufferHeight']
+            width = _singletons.device.width
+            height = _singletons.device.height
 
         return width, height
 
@@ -588,19 +417,3 @@ class SceneRenderJobBase(object):
             return self.GetSwapChain().backBuffer
         
         return _singletons.device.GetRenderContext().GetDefaultBackBuffer()
-
-    def GetDepthStencilWithRTMAL(self, depthFormat, backBufferDepthStencil, renderTargetIndex):
-        """
-        Gets the BackBufferDepthStencil. If it is None it gets created with the renderTargetManager
-        """
-        if backBufferDepthStencil is not None and depthFormat == backBufferDepthStencil.format:
-            return backBufferDepthStencil
-        else :
-            width, height = self.GetBackBufferSize()
-            result = rtm.GetDepthStencilAL(
-                width, height, 
-                depthFormat, 
-                index = renderTargetIndex)
-            if result is not None:
-                result.name = 'depthStencil'
-            return result

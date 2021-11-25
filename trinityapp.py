@@ -234,7 +234,7 @@ def create_windowless_device(respath=_DEFAULT_RES_PATHS):
     trinity.device.deviceType = trinity.TriDeviceType.SOFTWARE
     try:
         trinity.device.CreateWindowlessDevice()
-    except (trinity.ALError, trinity.D3DError):
+    except trinity.ALError:
         # Not exactly window-less, but at least functional fallback
         log.exception("Failed to create windowless trinity device, trying a normal one")
         TrinityApp()

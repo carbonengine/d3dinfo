@@ -188,7 +188,6 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         self.postBackBuffer = None
         self.postProcess = None
         self.startOpacity = 1.0
-        self.dx9_active = trinity.platform == "dx9"
         self.releasing = False
         self.rebuilding = False
         self.rs_effect = None
@@ -248,10 +247,7 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         self.SetSettingsBasedOnPerformancePreferences()
 
     def GetMSAAType(self):
-        if self.dx9_active:
-            msaaType = 1
-            aaQuality = gfxsettings.AA_QUALITY_DISABLED
-        elif sm.IsServiceRunning("device"):
+        if sm.IsServiceRunning("device"):
             aaQuality = gfxsettings.Get(gfxsettings.GFX_ANTI_ALIASING)
             msaaType = sm.GetService("device").GetMSAATypeFromQuality(aaQuality)
         else:
@@ -276,12 +272,8 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         if msaaType <= 1:
             self.SetStepAttr("CLEAR", "isColorCleared", False)
 
-        if not self.dx9_active:
-            width, height = self.SetupBufferedViewports(viewport)
-            self.SetupPasses(viewport, msaaType, width, height)
-        else:
-            width, height = self.GetBackBufferSize()
-            self.SetupDX9Passes(viewport, width, height, msaaType)
+        width, height = self.SetupBufferedViewports(viewport)
+        self.SetupPasses(viewport, msaaType, width, height)
 
         self.UpdatePostProcessingTexCoords(async=True)
 
@@ -334,17 +326,14 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
         if viewport:
             self.bgBuffer = rtm.GetRenderTargetAL(width, height, 1, bbFormat, index=2)
             self.blendsource = rtm.GetRenderTargetAL(width, height, 1, bbFormat, index=1)
-            if self.dx9_active:
-                self.customBackBuffer = rtm.GetRenderTargetAL(width, height, 1, bbFormat, index=3)
+            self.transOutput = rtm.GetRenderTargetAL(width, height, 1, bbFormat, index=5)
+            if self.supersampling:
+                # NOTE that for AA_QUALITY_TAA_HIGH we are forcing MSAA to 1 with this even though the variable says 4!
+                self.customBackBuffer = rtm.GetRenderTargetAL(width * AA_SCALE_FACTOR, height * AA_SCALE_FACTOR, 1, bbFormat, index=3)
+                self.customBackBuffer2 = rtm.GetRenderTargetAL(width, height, 1, bbFormat, index=4)
             else:
-                self.transOutput = rtm.GetRenderTargetAL(width, height, 1, bbFormat, index=5)
-                if self.supersampling:
-                    # NOTE that for AA_QUALITY_TAA_HIGH we are forcing MSAA to 1 with this even though the variable says 4!
-                    self.customBackBuffer = rtm.GetRenderTargetAL(width * AA_SCALE_FACTOR, height * AA_SCALE_FACTOR, 1, bbFormat, index=3)
-                    self.customBackBuffer2 = rtm.GetRenderTargetAL(width, height, 1, bbFormat, index=4)
-                else:
-                    self.customBackBuffer = rtm.GetRenderTargetMsaaAL(width, height, bbFormat, msaaType, 0, index=3)
-                    self.postBackBuffer = rtm.GetRenderTargetAL(width, height, 1, bbFormat, index=6)
+                self.customBackBuffer = rtm.GetRenderTargetMsaaAL(width, height, bbFormat, msaaType, 0, index=3)
+                self.postBackBuffer = rtm.GetRenderTargetAL(width, height, 1, bbFormat, index=6)
             self.AddStep("SET_BACKBUFFER", trinity.TriStepPushRenderTarget(self.customBackBuffer))
             self.AddStep("SET_BG_LAYER", trinity.TriStepCopyRenderTarget(self.bgBuffer, self.GetBackBufferRenderTarget(), self.cropped_local_vp_obj, self.cropped_scr_vp_obj))
             if msaaType <= 1:
@@ -476,26 +465,22 @@ class SceneRenderJobCharacters(SceneRenderJobBase):
             self.cropped_local_vp_obj = trinity.TriViewport()
             self.CropLocalVPObj(self.local_scale_vp_obj, self.cropped_local_vp_obj)
             width, height = viewport.width, viewport.height
-            if not self.dx9_active:
-                self._SetViewport(self.local_vp_obj)
-            else:
-                self._SetViewport(self.scr_vp_obj)
+            self._SetViewport(self.local_vp_obj)
 
         return width, height
 
     def UpdateSteps(self):
-        if not self.dx9_active:
-            self.RemoveStep("SET_BG_LAYER")
-            self.RemoveStep("PLACE_BG")
-            self.AddStep("SET_BG_LAYER", trinity.TriStepCopyRenderTarget(self.bgBuffer, self.GetBackBufferRenderTarget(), self.cropped_local_vp_obj, self.cropped_scr_vp_obj))
-            if self.msaaType <= 1:
-                self.AddStep("PLACE_BG", trinity.TriStepCopyRenderTarget(self.customBackBuffer, self.GetBackBufferRenderTarget(), self.cropped_local_vp_obj, self.cropped_scr_vp_obj))
-            self.RemoveStep("PLACE_AVATAR")
-            self.AddStep("PLACE_AVATAR", trinity.TriStepCopyRenderTarget(self.bgBuffer, self.GetBackBufferRenderTarget(), self.scr_vp_obj, self.local_vp_obj))
-            self.RemoveStep("SET_BLEND_VP")
-            self.AddStep("SET_BLEND_VP", trinity.TriStepSetViewport(self.scr_vp_obj))
-            self.RemoveStep("SET_PP_VIEWPORT")
-            self.AddStep("SET_PP_VIEWPORT", trinity.TriStepSetViewport(self.pp_viewport.object))
+        self.RemoveStep("SET_BG_LAYER")
+        self.RemoveStep("PLACE_BG")
+        self.AddStep("SET_BG_LAYER", trinity.TriStepCopyRenderTarget(self.bgBuffer, self.GetBackBufferRenderTarget(), self.cropped_local_vp_obj, self.cropped_scr_vp_obj))
+        if self.msaaType <= 1:
+            self.AddStep("PLACE_BG", trinity.TriStepCopyRenderTarget(self.customBackBuffer, self.GetBackBufferRenderTarget(), self.cropped_local_vp_obj, self.cropped_scr_vp_obj))
+        self.RemoveStep("PLACE_AVATAR")
+        self.AddStep("PLACE_AVATAR", trinity.TriStepCopyRenderTarget(self.bgBuffer, self.GetBackBufferRenderTarget(), self.scr_vp_obj, self.local_vp_obj))
+        self.RemoveStep("SET_BLEND_VP")
+        self.AddStep("SET_BLEND_VP", trinity.TriStepSetViewport(self.scr_vp_obj))
+        self.RemoveStep("SET_PP_VIEWPORT")
+        self.AddStep("SET_PP_VIEWPORT", trinity.TriStepSetViewport(self.pp_viewport.object))
 
     def UpdateViewport(self, new_viewport):
         if not hasattr(self, 'scr_vp_obj') or not hasattr(self, 'local_vp_obj') or self.scr_vp_obj is None or self.local_vp_obj is None:

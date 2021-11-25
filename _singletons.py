@@ -37,10 +37,3 @@ def _ReportRemovedDevice(hr, message, count, marker, pageFaultResource):
                          "tags": {"reason": '0x%x' % hr, "marker": marker}})
 
 device.onDeviceRemoved = _ReportRemovedDevice
-
-if not hasattr(_trinity, 'D3DERR_OUTOFVIDEOMEMORY'):
-    setattr(_trinity, 'D3DERR_OUTOFVIDEOMEMORY', _trinity.E_OUTOFMEMORY)
-if not hasattr(_trinity, 'D3DERR_NOTAVAILABLE'):
-    class _D3DERR_NOTAVAILABLE(Exception):
-        pass
-    setattr(_trinity, 'D3DERR_NOTAVAILABLE', _D3DERR_NOTAVAILABLE)

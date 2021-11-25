@@ -1,7 +1,7 @@
 from .sceneRenderJobSpace import SceneRenderJobSpace
 from .renderJob import renderJobs
 
-def CreateSceneRenderJobSpaceTransition(name=None, stageKey=None):
+def CreateSceneRenderJobSpaceTransition(name=None):
     """
     We can't use __init__ on a decorated class, so we provide a creation function that does it for us
     """
@@ -10,8 +10,6 @@ def CreateSceneRenderJobSpaceTransition(name=None, stageKey=None):
         newRJ.ManualInit(name)
     else:
         newRJ.ManualInit()
-
-    newRJ.SetMultiViewStage(stageKey)
     return newRJ
 
 
