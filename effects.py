@@ -219,10 +219,10 @@ def ConstToParameter(effect, name, cache=None):
     :type name: str
     :param cache: optional cache dictionary to avoid re-parsing files
     :type cache: dict
-    :raises ValueError: if the parameter name is invalid
+    :raises ValueError: if the parameter name is invalid or the parameter isn't used by the effect.
     """
     path = blue.paths.ResolvePath(effect.effectFilePath)
-    params, resources, _ = _GetMergedParameters(path, effect.options, cache)
+    params, _, _ = _GetMergedParameters(path, effect.options, cache)
     if name not in params:
         raise ValueError('parameter \"%s\" is not used by the effect' % name)
     for i, p in enumerate(effect.constParameters):
