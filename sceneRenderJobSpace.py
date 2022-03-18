@@ -146,9 +146,9 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         self.useImpostors = True
 
-        self.useReflectionProbe = True
-
         self.reflectionSetting = gfxsettings.GFX_REFLECTION_QUALITY_LOW # default to low
+        self.shaderModel = trinity.GetShaderModel()
+
 
     def Enable(self, schedule=True):
         SceneRenderJobBase.Enable(self, schedule)
@@ -506,8 +506,18 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         except gfxsettings.UninitializedSettingsGroupError:
             currentSettings["gpuParticles"] = gfxsettings.GetDefault(gfxsettings.UI_GPU_PARTICLES_ENABLED)
 
-        currentSettings["reflections"] = gfxsettings.Get(gfxsettings.GFX_REFLECTION_QUALITY)
+        currentSettings["shaderModel"] = gfxsettings.Get(gfxsettings.GFX_SHADER_QUALITY)
 
+        if currentSettings["shaderModel"] == gfxsettings.SHADER_MODEL_LOW:
+            currentSettings["reflections"] = gfxsettings.GFX_REFLECTION_QUALITY_OFF
+            gfxsettings.Set(gfxsettings.GFX_REFLECTION_QUALITY, currentSettings["reflections"], pending=False)
+        else:
+            currentSettings["reflections"] = gfxsettings.Get(gfxsettings.GFX_REFLECTION_QUALITY)
+            if currentSettings["reflections"] == gfxsettings.GFX_REFLECTION_QUALITY_OFF:
+                # We can't have reflections off normally, only when shadermodel is low, so reset it!
+                gfxsettings.SetDefault(gfxsettings.GFX_REFLECTION_QUALITY, pending=False)
+                currentSettings["reflections"] = gfxsettings.Get(gfxsettings.GFX_REFLECTION_QUALITY)
+ 
         # Intel "GPU" drivers on macOS 10.14 can't handle draw indirect calls, so we have to disable particle systems
         # for them.
         if blue.sysinfo.os.platform == blue.OsPlatform.OSX and blue.sysinfo.os.majorVersion == 10 and blue.sysinfo.os.minorVersion <= 14:
@@ -775,9 +785,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
     def SetReflectionBasedOnSettings(self):
         scene = self.GetScene()
-        reflectionsEnabled = gfxsettings.Get(gfxsettings.GFX_SHADER_QUALITY) != gfxsettings.SHADER_MODEL_LOW
 
-        if reflectionsEnabled:
+        if self.reflectionSetting != gfxsettings.GFX_REFLECTION_QUALITY_OFF:
             scene.reflectionProbe = trinity.Tr2ReflectionProbe()
             if self.reflectionSetting == gfxsettings.GFX_REFLECTION_QUALITY_HIGHEST:
                 scene.reflectionProbe.renderFrequency = trinity.ReflectionProbeRenderFrequency.AllSidesPerFrame
@@ -787,12 +796,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.EnableStep("RENDER_REFLECTIONS")
         else:
             scene.reflectionProbe = None
-
-            # Force the reflection quality to be off!
-            if self.reflectionSetting != gfxsettings.GFX_REFLECTION_QUALITY_OFF:
-                gfxsettings.Set(gfxsettings.GFX_REFLECTION_QUALITY, gfxsettings.GFX_REFLECTION_QUALITY_OFF, pending=False)
-                self.reflectionSetting = gfxsettings.Get(gfxsettings.GFX_REFLECTION_QUALITY)
-
             self.DisableStep("RENDER_REFLECTIONS")
 
         trinity.settings.SetValue('eveReflectionSetting', self.reflectionSetting)
