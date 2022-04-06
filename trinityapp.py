@@ -209,7 +209,6 @@ class TrinityApp(object):
     def _on_app_resize_event(self, *_):
         if not self.windowed:
             return
-        self.change_window(width=trinity.app.width, height=trinity.app.height)
         self.on_resize.emit()
 
     @classmethod
