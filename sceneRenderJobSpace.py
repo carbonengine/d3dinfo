@@ -508,16 +508,8 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         currentSettings["shaderModel"] = gfxsettings.Get(gfxsettings.GFX_SHADER_QUALITY)
 
-        if currentSettings["shaderModel"] == gfxsettings.SHADER_MODEL_LOW:
-            currentSettings["reflections"] = gfxsettings.GFX_REFLECTION_QUALITY_OFF
-            gfxsettings.Set(gfxsettings.GFX_REFLECTION_QUALITY, currentSettings["reflections"], pending=False)
-        else:
-            currentSettings["reflections"] = gfxsettings.Get(gfxsettings.GFX_REFLECTION_QUALITY)
-            if currentSettings["reflections"] == gfxsettings.GFX_REFLECTION_QUALITY_OFF:
-                # We can't have reflections off normally, only when shadermodel is low, so reset it!
-                gfxsettings.SetDefault(gfxsettings.GFX_REFLECTION_QUALITY, pending=False)
-                currentSettings["reflections"] = gfxsettings.Get(gfxsettings.GFX_REFLECTION_QUALITY)
- 
+        self._GetRefectionSettings(currentSettings)
+
         # Intel "GPU" drivers on macOS 10.14 can't handle draw indirect calls, so we have to disable particle systems
         # for them.
         if blue.sysinfo.os.platform == blue.OsPlatform.OSX and blue.sysinfo.os.majorVersion == 10 and blue.sysinfo.os.minorVersion <= 14:
@@ -531,6 +523,18 @@ class SceneRenderJobSpace(SceneRenderJobBase):
                 currentSettings["gpuParticles"] = False
 
         return currentSettings
+
+    def _GetRefectionSettings(self, currentSettings):
+        if currentSettings["shaderModel"] == gfxsettings.SHADER_MODEL_LOW:
+            currentSettings["reflections"] = gfxsettings.GFX_REFLECTION_QUALITY_OFF
+            gfxsettings.Set(gfxsettings.GFX_REFLECTION_QUALITY, currentSettings["reflections"], pending=False)
+        else:
+            currentSettings["reflections"] = gfxsettings.Get(gfxsettings.GFX_REFLECTION_QUALITY)
+            if currentSettings["reflections"] == gfxsettings.GFX_REFLECTION_QUALITY_OFF:
+                # We can't have reflections off normally, only when shadermodel is low, so reset it!
+                gfxsettings.SetDefault(gfxsettings.GFX_REFLECTION_QUALITY, pending=False)
+                currentSettings["reflections"] = gfxsettings.Get(gfxsettings.GFX_REFLECTION_QUALITY)
+
 
     def ApplyBaseSettings(self):
         currentSettings = self._GetSettings()
