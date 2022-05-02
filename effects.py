@@ -317,6 +317,24 @@ def _WrapParameterValue(value, param):
         return _VectorWrapper(value)
 
 
+def _WrapEffectParameters(effect, params):
+    p = {}
+    for n, v in effect.constParameters:
+        if n in params:
+            p[n] = _WrapParameterValue(v, params[n])
+    for each in effect.parameters:
+        if each.name in params:
+            p[each.name] = _WrapParameterValue(each.value, params[each.name])
+    return p
+
+
+def EvaluateExpression(effect, expression, cache=None):
+    path = blue.paths.ResolvePath(effect.effectFilePath)
+    params, resources, _ = _GetMergedParameters(path, effect.options, cache)
+    p = _WrapEffectParameters(effect, params)
+    return eval(expression, {}, p)
+
+
 def ValidateParameterValue(effect, name, value, cache=None):
     """
     Moves the parameter with the specified name from parameters to constParameters list.
@@ -325,6 +343,7 @@ def ValidateParameterValue(effect, name, value, cache=None):
     :type effect: trinity.Tr2Effect
     :param name: parameter name
     :type name: str
+    :param value: current parameter value
     :param cache: optional cache dictionary to avoid re-parsing files
     :type cache: dict
     :raises ValueError: if parameter with the specified name is not in the compiled effect
@@ -337,13 +356,7 @@ def ValidateParameterValue(effect, name, value, cache=None):
     validation = params[name].annotation.get('Validation', '')
     if not validation:
         return
-    p = {}
-    for n, v in effect.constParameters:
-        if n in params:
-            p[n] = _WrapParameterValue(v, params[n])
-    for each in effect.parameters:
-        if each.name in params:
-            p[each.name] = _WrapParameterValue(each.value, params[each.name])
+    p = _WrapEffectParameters(effect, params)
     p['self'] = _WrapParameterValue(value, params[name])
     if not eval(validation, {}, p):
         message = params[name].annotation.get('ValidationMessage', 'invalid value')
