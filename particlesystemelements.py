@@ -117,7 +117,7 @@ def _DimensionFromMask(mask):
     return 1
 
 
-def GetParticleElementAnnotations(effect):
+def GetParticleElementAnnotations(effect, cache=None):
     """
     :param effect: effect object
     :type effect: trinity.Tr2Effect
@@ -126,6 +126,11 @@ def GetParticleElementAnnotations(effect):
     inputs = {}
     annotations = {}
     options = {name: value for name, value in effect.options}
+    frozen = tuple(options.items())
+
+    resPath = effect.effectFilePath.lower().replace('\\', '/')
+    if cache is not None and (resPath, frozen, 'GetParticleElementAnnotations') in cache:
+        return set(cache[(resPath, frozen, 'GetParticleElementAnnotations')])
 
     def inner(shader):
         """
@@ -187,6 +192,8 @@ def GetParticleElementAnnotations(effect):
     for k in annotations.keys():
         if k not in used:
             del annotations[k]
+    if cache is not None:
+        cache[(resPath, frozen, 'GetParticleElementAnnotations')] = annotations
     return annotations
 
 

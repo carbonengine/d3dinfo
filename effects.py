@@ -363,15 +363,22 @@ def ValidateParameterValue(effect, name, value, cache=None):
         raise AssertionError(params[name].annotation.get('ValidationMessage', message))
 
 
-def GetVertexShaderInputs(effect):
+def GetVertexShaderInputs(effect, cache=None):
     """
     Returns merged vertex shader stage inputs as (usage, usage index) pairs from all permutations of the effect
     :param effect: effect object
     :type effect: trinity.Tr2Effect
+    :param cache: optional cache dictionary to avoid re-parsing files
+    :type cache: dict
     :rtype: set[(int, int)]
     """
     inputs = set()
     options = {name: value for name, value in effect.options}
+    frozen = tuple(options.items())
+
+    resPath = effect.effectFilePath.lower().replace('\\', '/')
+    if cache is not None and (resPath, frozen, 'GetVertexShaderInputs') in cache:
+        return set(cache[(resPath, frozen, 'GetVertexShaderInputs')])
 
     def inner(shader):
         """
@@ -394,6 +401,8 @@ def GetVertexShaderInputs(effect):
                     inputs.update([(x.usage, x.usage_index) for x in vs.inputs if x.used_mask])
 
     effectinfo.apply_to_shaders(blue.paths.ResolvePath(effect.effectFilePath), inner)
+    if cache is not None:
+        cache[(resPath, frozen, 'GetVertexShaderInputs')] = inputs
     return inputs
 
 
