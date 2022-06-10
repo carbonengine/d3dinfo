@@ -2,8 +2,6 @@
 This is where we initialize singletons that are accessible at module root level.
 e.g. trinity.SingletonName
 """
-import logging
-
 import blue
 
 # Load the Trinity DLL and then we create a reference to the newly
@@ -31,9 +29,18 @@ from . import GraphManager
 graphs = GraphManager.GraphManager()
 
 
-def _ReportRemovedDevice(hr, message, count, marker, pageFaultResource, crashInfo):
-    logging.error('GPU device removed',
-                  extra={"count": count, "error_message": message, "pageFaultResource": pageFaultResource,
-                         "tags": {"reason": '0x%x' % hr, "marker": marker}, "crashInfo": crashInfo})
+def _ReportRemovedDevice(hr, message, count, marker, pageFaultResource, offendingShader, crashInfo):
+    import monolithsentry
+    # sentry has a tag value length limitation to 200 chars, so lets truncate the shader from the beginning,
+    # because the meat is in the end
+    # https://docs.sentry.io/platforms/python/guides/logging/enriching-events/tags/
+    if len(offendingShader) > 200:
+        offendingShader = "..." + offendingShader[len(offendingShader) - 197:]
+
+    monolithsentry.capture_error("GPU device removed",
+                                 extra={"count": count, "error_message": message,
+                                        "pageFaultResource": pageFaultResource,
+                                        "crashInfo": crashInfo},
+                                 new_tags={"reason": '0x%x' % hr, "marker": marker, "offendingShader": offendingShader})
 
 device.onDeviceRemoved = _ReportRemovedDevice
