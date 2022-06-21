@@ -29,7 +29,7 @@ from . import GraphManager
 graphs = GraphManager.GraphManager()
 
 
-def _ReportRemovedDevice(hr, message, count, marker, pageFaultResource, offendingShader, crashInfo):
+def _ReportRemovedDevice(hr, message, count, marker, pageFaultResource, offendingShader):
     import monolithsentry
     # sentry has a tag value length limitation to 200 chars, so lets truncate the shader from the beginning,
     # because the meat is in the end
@@ -39,8 +39,7 @@ def _ReportRemovedDevice(hr, message, count, marker, pageFaultResource, offendin
 
     monolithsentry.capture_error("GPU device removed",
                                  extra={"count": count, "error_message": message,
-                                        "pageFaultResource": pageFaultResource,
-                                        "crashInfo": crashInfo},
+                                        "pageFaultResource": pageFaultResource},
                                  new_tags={"reason": '0x%x' % hr, "marker": marker, "offendingShader": offendingShader})
 
 device.onDeviceRemoved = _ReportRemovedDevice
