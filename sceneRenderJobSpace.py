@@ -805,6 +805,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         scene = self.GetScene()
         if scene is None:
             return
+        self.SetSSAOBasedOnSettings()
         if self.useImpostors:
             scene.impostorManager = trinity.Tr2ImpostorManager()
         if self.gpuParticlesEnabled:
@@ -818,7 +819,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             scene.msaaSamples = 1
 
         self.SetReflectionBasedOnSettings()
-        self.SetSSAOBasedOnSettings()
 
     def SetReflectionBasedOnSettings(self):
         scene = self.GetScene()
