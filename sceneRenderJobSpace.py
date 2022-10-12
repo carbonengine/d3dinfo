@@ -13,9 +13,6 @@ DEFAULT_POSTPROCESS_PATH = 'res:/dx9/postprocess/DefaultPostProcessingSettings.r
 
 logger = logging.getLogger(__name__)
 
-# This is a temporary hack for SSAO setting before we decide if we are tying it with any other graphics setting
-SSAOSetting = 0
-
 
 def CreateSceneRenderJobSpace(name=None):
     """
@@ -151,6 +148,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.useImpostors = True
 
         self.reflectionSetting = gfxsettings.GFX_REFLECTION_QUALITY_LOW # default to low
+        self.aoSetting = gfxsettings.GFX_AO_QUALITY_HIGH
         self.shaderModel = trinity.GetShaderModel()
 
 
@@ -521,6 +519,10 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             currentSettings["gpuParticles"] = gfxsettings.GetDefault(gfxsettings.UI_GPU_PARTICLES_ENABLED)
 
         currentSettings["shaderModel"] = gfxsettings.Get(gfxsettings.GFX_SHADER_QUALITY)
+        if currentSettings["shaderModel"] == gfxsettings.SHADER_MODEL_LOW:
+            currentSettings['ao'] = gfxsettings.GFX_AO_QUALITY_OFF
+        else:
+            currentSettings['ao'] = gfxsettings.Get(gfxsettings.GFX_AO_QUALITY)
 
         self._GetRefectionSettings(currentSettings)
 
@@ -572,6 +574,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.aaQuality = self.overrideSettings["aaQuality"]
 
         self.reflectionSetting = currentSettings["reflections"]
+        self.aoSetting = currentSettings['ao']
 
     def OverrideSettings(self, key, value):
         self.overrideSettings[key] = value
@@ -628,7 +631,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             self.blitTexture = None
 
         # normalTexture
-        if SSAOSetting == 0 or trinity.GetShaderModel() == 'SM_3_0_LO':
+        if self.aoSetting == gfxsettings.GFX_AO_QUALITY_OFF or trinity.GetShaderModel() == 'SM_3_0_LO':
             needNormalMap = False
         else:
             needNormalMap = True
@@ -842,17 +845,27 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
     def SetSSAOBasedOnSettings(self):
         scene = self.GetScene()
-
-        if SSAOSetting == 0 or trinity.GetShaderModel() == 'SM_3_0_LO':
+        if self.aoSetting == gfxsettings.GFX_AO_QUALITY_OFF or trinity.GetShaderModel() == 'SM_3_0_LO':
             scene.SSAO.enabled = False
-        elif SSAOSetting == 1:
-            scene.SSAO.enabled = True
-            scene.SSAO.quality = trinity.SSAOQuality.Lowest
-            scene.SSAO.useDownsampledSSAO = True
+            scene.SSAO.largeEffect = False
         else:
             scene.SSAO.enabled = True
-            scene.SSAO.quality = trinity.SSAOQuality.Highest
-            scene.SSAO.useDownsampledSSAO = False
+            scene.SSAO.largeEffect = True
+            if self.aoSetting == gfxsettings.GFX_AO_QUALITY_LOW:
+                scene.SSAO.quality = trinity.SSAOQuality.Lowest
+                scene.SSAO.downsampled = True
+                scene.SSAO.qualityLarge = trinity.SSAOQuality.Lowest
+                scene.SSAO.downsampledLarge = True
+            elif self.aoSetting == gfxsettings.GFX_AO_QUALITY_MEDIUM:
+                scene.SSAO.quality = trinity.SSAOQuality.Medium
+                scene.SSAO.downsampled = False
+                scene.SSAO.qualityLarge = trinity.SSAOQuality.Low
+                scene.SSAO.downsampledLarge = True
+            else:
+                scene.SSAO.quality = trinity.SSAOQuality.Highest
+                scene.SSAO.downsampled = False
+                scene.SSAO.qualityLarge = trinity.SSAOQuality.Low
+                scene.SSAO.downsampledLarge = False
 
     def UpdateFinalBlitStep(self):
         """
