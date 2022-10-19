@@ -965,8 +965,14 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         if self.GetScene():
             postprocess = self.GetScene().postprocess
             if not postprocess:
+                if self.fsrMode == gfxsettings.GFX_FSR_MODE_OFF:
+                    # in this case we don't need to do anything
+                    return
+
                 postprocess = trinity.Tr2PostProcess2()
-            ffx = getattr(postprocess, "fidelityFX", trinity.Tr2PPFidelityFXEffect())
+                self.GetScene().postprocess = postprocess
+
+            ffx = postprocess.fidelityFX or trinity.Tr2PPFidelityFXEffect()
             ffx.SetFSRQuality(self.fsrMode)
 
             self.invBackBufferScale = 1.0 / ffx.upsamplingFactor
