@@ -528,10 +528,6 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         currentSettings["fsr"] = gfxsettings.Get(gfxsettings.GFX_FSR_MODE)
 
-        if gfxsettings.GetPendingOrCurrent(gfxsettings.GFX_ANTI_ALIASING) == gfxsettings.AA_QUALITY_DISABLED:
-            # turn it off if we have no aa
-            currentSettings["fsr"] = gfxsettings.GFX_FSR_MODE_OFF
-
         self._GetRefectionSettings(currentSettings)
 
         # Intel "GPU" drivers on macOS 10.14 can't handle draw indirect calls, so we have to disable particle systems
