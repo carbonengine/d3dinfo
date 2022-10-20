@@ -600,7 +600,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         width, height = self.GetBackBufferSize()
 
         # customBackBuffer
-        useCustomBackBuffer = self.hdrEnabled or self.msaaEnabled
+        useCustomBackBuffer = self.hdrEnabled or self.msaaEnabled or self.fsrMode > 0
         if self.hdrEnabled:
             if _singletons.device.SupportsRenderTargetFormat(trinity.PIXEL_FORMAT.R11G11B10_FLOAT):
                 customFormat = trinity.PIXEL_FORMAT.R11G11B10_FLOAT
@@ -805,6 +805,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             step.quality = 0
 
     def ApplyPerformancePreferencesToScene(self):
+        self._RefreshFSR()
         self._SetShadowMap()
         self._SetDepthMap()
         self._SetNormalMap()
