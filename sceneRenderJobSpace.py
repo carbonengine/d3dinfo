@@ -657,7 +657,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         # distortionTexture
         if self.distortionEffectsEnabled:
-            index = 0
+            index = 2 # VERY IMPORTANT INDEX FOR MAGIC RenderTargetManager STUFF
             if self._TargetDiffers(self.distortionTexture, "trinity.Tr2RenderTarget",
                                    trinity.PIXEL_FORMAT.B8G8R8A8_UNORM, 0, width, height):
                 self.distortionTexture = rtm.GetRenderTargetAL(
