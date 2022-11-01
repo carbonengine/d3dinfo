@@ -856,25 +856,17 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         scene = self.GetScene()
         if self.aoSetting == gfxsettings.GFX_AO_QUALITY_OFF or trinity.GetShaderModel() == 'SM_3_0_LO':
             scene.SSAO.enabled = False
-            scene.SSAO.largeEffect = False
         else:
             scene.SSAO.enabled = True
-            scene.SSAO.largeEffect = True
             if self.aoSetting == gfxsettings.GFX_AO_QUALITY_LOW:
                 scene.SSAO.quality = trinity.SSAOQuality.Lowest
                 scene.SSAO.downsampled = True
-                scene.SSAO.qualityLarge = trinity.SSAOQuality.Lowest
-                scene.SSAO.downsampledLarge = True
             elif self.aoSetting == gfxsettings.GFX_AO_QUALITY_MEDIUM:
                 scene.SSAO.quality = trinity.SSAOQuality.Medium
                 scene.SSAO.downsampled = False
-                scene.SSAO.qualityLarge = trinity.SSAOQuality.Low
-                scene.SSAO.downsampledLarge = True
             else:
                 scene.SSAO.quality = trinity.SSAOQuality.Highest
                 scene.SSAO.downsampled = False
-                scene.SSAO.qualityLarge = trinity.SSAOQuality.Low
-                scene.SSAO.downsampledLarge = False
 
     def UpdateFinalBlitStep(self):
         """

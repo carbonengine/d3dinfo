@@ -128,11 +128,3 @@ class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
             return self.backBufferOverride
 
         return SceneRenderJobSpace.GetBackBufferRenderTarget(self)
-
-    def _RefreshFSR(self):
-        SceneRenderJobSpace._RefreshFSR(self)
-        if self.GetScene():
-            postprocess = self.GetScene().postprocess
-            if postprocess is not None:
-                postprocess.fidelityFX.debug = True
-                postprocess.fidelityFX.fsrEnabled = True
