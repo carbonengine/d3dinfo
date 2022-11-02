@@ -33,7 +33,7 @@ class SceneRenderJobSpaceJessica(SceneRenderJobSpace):
             "shadowQuality": 2,
             "shadowMapSize": 1024,
             "taa": False,
-            "reflections": gfxsettings.GFX_REFLECTION_QUALITY_HIGHEST,
+            "reflections": gfxsettings.GFX_REFLECTION_QUALITY_ULTRA,
             "ao": gfxsettings.GFX_AO_QUALITY_HIGH,
             "fsr": gfxsettings.GFX_FSR_MODE_OFF
         }

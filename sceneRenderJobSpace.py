@@ -837,7 +837,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
 
         if self.reflectionSetting != gfxsettings.GFX_REFLECTION_QUALITY_OFF:
             scene.reflectionProbe = trinity.Tr2ReflectionProbe()
-            if self.reflectionSetting == gfxsettings.GFX_REFLECTION_QUALITY_HIGHEST:
+            if self.reflectionSetting == gfxsettings.GFX_REFLECTION_QUALITY_ULTRA:
                 scene.reflectionProbe.renderFrequency = trinity.ReflectionProbeRenderFrequency.AllSidesPerFrame
             else:
                 scene.reflectionProbe.renderFrequency = trinity.ReflectionProbeRenderFrequency.OneSidePerFrame
