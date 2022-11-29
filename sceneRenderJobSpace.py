@@ -540,6 +540,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
             currentSettings['ao'] = gfxsettings.Get(gfxsettings.GFX_AO_QUALITY)
 
         currentSettings["fsr"] = gfxsettings.Get(gfxsettings.GFX_FSR_MODE)
+        currentSettings["dofEnabled"] = gfxsettings.Get(gfxsettings.GFX_DOF_POSTPROCESS_ENABLED)
 
         self._GetRefectionSettings(currentSettings)
 
@@ -578,6 +579,7 @@ class SceneRenderJobSpace(SceneRenderJobBase):
         self.secondaryLighting = self.distortionEffectsEnabled = isDepth
 
         trinity.settings.SetValue('eveSpaceSceneDynamicLighting', trinity.GetShaderModel().endswith("DEPTH"))
+        trinity.settings.SetValue("postprocessDofEnabled", currentSettings.get("dofEnabled", True))
 
         # Apply settings override, usually used by special case rendering(like the photo service)
         if "bbFormat" in self.overrideSettings:
