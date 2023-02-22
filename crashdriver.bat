@@ -1,1 +1,0 @@
-..\..\eve\client\pythonInterpreter.bat crashdriver.py
