@@ -73,7 +73,7 @@ def GetAvailablePlatforms():
 
 def InstallSystemBinaries(fileName):
     installMsg = "Executing %s ..." % fileName
-    print installMsg
+    print(installMsg)
 
     logger.info(installMsg)
     # Get the current working directory
