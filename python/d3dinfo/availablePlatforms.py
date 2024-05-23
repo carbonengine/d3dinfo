@@ -99,8 +99,8 @@ def InstallSystemBinaries(fileName):
 def InstallDirectXIfNeeded():
     if not IsD3D11Valid():
         # Install appropriate redist
-        import imp
-        if imp.get_suffixes()[0][0] == '_d.pyd':
+        import importlib.machinery
+        if importlib.machinery.EXTENSION_SUFFIXES[0] == '_d.pyd':
             InstallSystemBinaries(r"DirectXRedistForDebug.exe")
         else:
             InstallSystemBinaries(r"DirectXRedist.exe")
