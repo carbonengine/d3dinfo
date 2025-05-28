@@ -1,5 +1,6 @@
 import sys
 import os
+from six.moves import getcwd
 import blue
 import logging
 logger = logging.getLogger(__name__)
@@ -77,7 +78,7 @@ def InstallSystemBinaries(fileName):
 
     logger.info(installMsg)
     # Get the current working directory
-    oldDir = os.getcwdu()
+    oldDir = getcwd()
     # Change to the bin directory, because if the client is run from a path that contains spaces
     # in a folder name the command will fail
     os.chdir(blue.paths.ResolvePath(u"bin:/"))
