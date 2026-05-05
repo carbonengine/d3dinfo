@@ -29,8 +29,6 @@ ccp_add_library(d3dinfo SHARED
     StdAfx.cpp
 )
 
-set(PUBLIC_HEADER_FILES "")
-
 find_package(carbon-blue REQUIRED COMPONENTS Blue)
 
 target_link_libraries(d3dinfo PRIVATE Blue)
@@ -55,9 +53,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
             ARCHIVE DESTINATION lib/${CCP_PLATFORM}/${CCP_ARCHITECTURE}/${CCP_TOOLSET}/
             RUNTIME DESTINATION bin/${CCP_PLATFORM}/${CCP_ARCHITECTURE}/${CCP_TOOLSET}/
         )
-        # Install rule for available public headers
-        install(FILES ${PUBLIC_HEADER_FILES} DESTINATION include)
-
         message(STATUS "lib/${CCP_PLATFORM}/${CCP_ARCHITECTURE}/${CCP_TOOLSET}/")
 
         configure_ccp_vendor_config_file(
@@ -82,8 +77,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
             DESTINATION share/carbon-d3dinfo
             FILE carbon-d3dinfo.cmake
         )
-
-        install(FILES ${PUBLIC_HEADER_FILES} DESTINATION include)
 
         install(
             FILES carbon-d3dinfoConfig.cmake DESTINATION share/carbon-d3dinfo
