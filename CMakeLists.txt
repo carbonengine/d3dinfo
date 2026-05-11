@@ -75,11 +75,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
         install(
             EXPORT d3dinfoTargets
             DESTINATION share/carbon-d3dinfo
-            FILE carbon-d3dinfo.cmake
-        )
-
-        install(
-            FILES carbon-d3dinfoConfig.cmake DESTINATION share/carbon-d3dinfo
+            FILE carbon-d3dinfoConfig.cmake
         )
     endif()
 
