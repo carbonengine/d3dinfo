@@ -3,6 +3,10 @@
     {
       "name": "carbon-blue",
       "version>=": "6.2.0"
+    },
+    {
+      "name": "carbon-pdmprotowrapper",
+      "version>=": "3.0.0#1"
     }
   ],
   "overrides": [
